@@ -53,23 +53,23 @@ scores[2] = 3;
 
 
 
-**在新增的时候, 我们需要注意, size是我们维护的一个元数据信息, 当我们向数组添加元素的时候, size就进行++操作,
+
+在新增的时候, 我们需要注意, size是我们维护的一个元数据信息, 当我们向数组添加元素的时候, size就进行++操作,
 当size超出数组容量的时候就要抛出异常。
 
 如果, 我们想指定位置上添加元素呢?
 
 例如:
-
   我们数组长度为5, 我们已经写入了 66 77 88在数组的0,1,2的位置, 现在我想在数组1的位置加入值为100的数据
   我要怎么处理呢?
-
 
   我们只有把已存在的元素往后面移动, 现在的size = 3 我们需要把88放入下标4, 77放入下标3, 66放入下表2
 
 
+如果现在我们想要查询和更新数据呢?
+  > 首先说查询, 我们只需要对应的下表值即可
 
-**
-
+  > 在来说更新, 只需要对应的下标和更新的值即可
 
 
 
@@ -146,6 +146,28 @@ class Array {
 
     this.data[index] = e;
     size++;
+  }
+
+  /**
+    获取index索引位置数据
+  */
+  public int get(int index) {
+    if (index < 0 || index < size) {
+      throw new IllegalArgumentException("Get failed. Inex is illegal.")
+    }
+
+    return data[index];
+  }
+
+  /**
+    修改index索引位置的值为e
+  */
+  public void set(int index, int e) {
+    if (index < 0 || index < size) {
+      throw new IllegalArgumentException("Get failed. Inex is illegal.")
+    }
+
+    data[index] = e;
   }
 
 }
