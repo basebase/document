@@ -51,6 +51,28 @@ scores[2] = 3;
   * 增删改查
   * 动态扩展
 
+
+
+**在新增的时候, 我们需要注意, size是我们维护的一个元数据信息, 当我们向数组添加元素的时候, size就进行++操作,
+当size超出数组容量的时候就要抛出异常。
+
+如果, 我们想指定位置上添加元素呢?
+
+例如:
+
+  我们数组长度为5, 我们已经写入了 66 77 88在数组的0,1,2的位置, 现在我想在数组1的位置加入值为100的数据
+  我要怎么处理呢?
+
+
+  我们只有把已存在的元素往后面移动, 现在的size = 3 我们需要把88放入下标4, 77放入下标3, 66放入下表2
+
+
+
+**
+
+
+
+
 我们来创建一个Array类来实现上述功能
 ```java
 class Array {
@@ -94,6 +116,38 @@ class Array {
   public int getSize() {
     return this.size ;
   }
+
+
+  /**
+    想数组头部添加一个元素
+  */
+  public void addLast(int e) {
+    if (size == this.data.length) {
+      throw new IllegalArgumentException("Add failed. Array is full.")
+    }
+
+    // 添加元素
+    this.data[size] = e;
+    size ++;
+  }
+
+  public void add(int index, int e) {
+    if (size == this.data.length) {
+      throw new IllegalArgumentException("Add failed. Array is full.")
+    }
+
+    if (index < 0 && index > this.size) {
+      throw new IllegalArgumentException("Add failed. Require index > 0 and index <= size. ")
+    }
+
+    for (int i = size - 1; i >= index; i--) {
+      this.data[i + 1] = this.data[i];
+    }
+
+    this.data[index] = e;
+    size++;
+  }
+
 }
 
 ```
