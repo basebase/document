@@ -62,101 +62,224 @@ scores[2] = 3;
 
 我们来创建一个Array类来实现上述功能
 ```java
-class Array {
-  private int[] data ;
-  private int size ;
-
-  private static final int DEFAULT_CAPACITY = 10;
-
-  /**
-    用户自定义一个数组容量, 默认实际元素为0
-  */
-  public Array(int capacity) {
-    this.data = new int[capacity];
-    this.size = 0;
-  }
-
-  /**
-    创建默认数组, 默认数组大小为10
-  */
-  public Array() {
-    this(DEFAULT_CAPACITY);
-  }
-
-  /**
-    判断数组是否为空
-  */
-  public boolean isEmpty() {
-    return this.size == 0 ;
-  }
-
-  /**
-    获取数组的容量大小
-  */
-  public int getCapacity() {
-    return this.data.length;
-  }
-
-  /**
-    获取实际元素
-  */
-  public int getSize() {
-    return this.size ;
-  }
 
 
-  /**
-    想数组头部添加一个元素
-  */
-  public void addLast(int e) {
-    if (size == this.data.length) {
-      throw new IllegalArgumentException("Add failed. Array is full.")
+public class Array {
+
+    private static final int DEFAULT_CAPACITY = 10;
+
+    private int[] data; // 数组容量
+    private int size; // 存放了多少元素
+
+
+    /***
+     * 提供初始化大小的数组
+     * @param capacity
+     */
+    public Array(int capacity) {
+        this.data = new int[capacity];
+        this.size = 0;
     }
 
-    // 添加元素
-    this.data[size] = e;
-    size ++;
-  }
-
-  public void add(int index, int e) {
-    if (size == this.data.length) {
-      throw new IllegalArgumentException("Add failed. Array is full.")
+    /**
+     * 提供默认初始化大小数组
+     */
+    public Array() {
+        this(DEFAULT_CAPACITY);
     }
 
-    if (index < 0 && index > this.size) {
-      throw new IllegalArgumentException("Add failed. Require index > 0 and index <= size. ")
+    /**
+     * @return 实际元素个数
+     */
+    public int getSize() {
+        return size;
     }
 
-    for (int i = size - 1; i >= index; i--) {
-      this.data[i + 1] = this.data[i];
+    /***
+     *
+     * @return 数组容量
+     */
+    public int getCapacity() {
+        return data.length;
     }
 
-    this.data[index] = e;
-    size++;
-  }
-
-  /**
-    获取index索引位置数据
-  */
-  public int get(int index) {
-    if (index < 0 || index < size) {
-      throw new IllegalArgumentException("Get failed. Inex is illegal.")
+    /**
+     * 判断数组是否为空
+     * @return
+     */
+    public boolean isEmpty() {
+        return size == 0 ;
     }
 
-    return data[index];
-  }
-
-  /**
-    修改index索引位置的值为e
-  */
-  public void set(int index, int e) {
-    if (index < 0 || index < size) {
-      throw new IllegalArgumentException("Get failed. Inex is illegal.")
+    /**
+     * 向数组头部添加元素
+     * @param e
+     */
+    public void addFirst(int e) {
+        add(0, e);
     }
 
-    data[index] = e;
-  }
+    /**
+     * 向数组末尾添加元素
+     * @param e 实际值
+     */
+    public void addLast(int e) {
+//        if (size >= data.length) {
+//            throw new IllegalArgumentException("数组已满.");
+//        }
+//
+//        // 把元素添加到数组末尾
+//        data[size] = e;
+//        // 实际元素加1, 否则数组一直覆盖当前下标的值
+//        size++;
+        add(size, e);
+    }
 
+    /***
+     * 向数组指定位置添加元素
+     * @param index 指定下标的位置
+     * @param e 元素值
+     */
+    public void add(int index, int e) {
+
+        if (size >= data.length) {
+            throw new IllegalArgumentException("数组已满.");
+        }
+
+        if (index < 0 && index > size) {
+            throw new IllegalArgumentException("请输入正确的下标位置");
+        }
+
+        // 将数组的元素向后面移动
+        for (int i = size; i > index; i--) {
+            data[i] = data[i - 1];
+        }
+
+        // 元素移动完毕后, 直接指定对应的下标值赋值
+        data[index] = e;
+        size ++;
+    }
+
+
+    /**
+     * 删除数组头部
+     * @return
+     */
+    public int removeFirst() {
+        return remove(0);
+    }
+
+    /***
+     * 删除数组尾部
+     * @return
+     */
+    public int removeLast() {
+        return remove(size - 1);
+    }
+
+    /**
+     * 删除指定元素
+     * @param e
+     */
+    public void removeElement(int e) {
+        int removeElementIndex = find(e);
+        remove(removeElementIndex);
+    }
+
+    /***
+     * 删除指定位置元素
+     * @param index
+     * @return
+     */
+    public int remove(int index) {
+        if (index < 0 || index >= size) {
+            throw new IllegalArgumentException("请输入正确的下标值");
+        }
+
+        int removeElement = get(index);
+        // 把后面的元素值写入到前一个元素位置
+        for (int i = index; i < size; i++) {
+            data[i] = data[i + 1];
+        }
+
+        size --;
+        return removeElement;
+    }
+
+    /***
+     * 获取index索引位置的元素
+     * @param index
+     * @return
+     */
+    public int get(int index) {
+        if (index < 0 || index >= size) {
+            throw new IllegalArgumentException("输入正确的下标");
+        }
+
+        return data[index];
+    }
+
+
+    /***
+     * 修改index元素的值为e
+     * @param index
+     * @param e
+     */
+    public void set(int index, int e) {
+        if (index < 0 || index >= size) {
+            throw new IllegalArgumentException("输入正确的下标");
+        }
+
+        data[index] = e;
+    }
+
+    /**
+     * 判断数组是否包含元素
+     * @param e
+     * @return
+     */
+    public boolean contains(int e) {
+        for (int i = 0; i < size; i++) {
+            if (data[i] == e) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 查找元素, 如果找到元素返回对应的下标, 否则返回-1
+     * @param e
+     * @return
+     */
+    public int find(int e) {
+        for (int i = 0 ; i < size; i ++) {
+            if (data[i] == e) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+
+    @Override
+    public String toString() {
+        StringBuffer buffer = new StringBuffer();
+        buffer.append("[");
+        for (int i = 0; i < size; i ++) {
+            if (i < size - 1) {
+                buffer.append(data[i]).append(",");
+            } else {
+                buffer.append(data[i]);
+            }
+        }
+
+        buffer.append("]");
+
+        return String.format("数组的元素为: %s 数组容量为: %s\n%s", size, getCapacity(), buffer.toString());
+    }
 }
 
 ```
