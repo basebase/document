@@ -29,6 +29,12 @@ scores[2] = 3;
 ```
 
 
+用一张图片来表示一下数组把。
+
+
+![avatar](https://github.com/basebase/img_server/blob/master/common/array01.png?raw=true)
+
+
 #### 自定义数组
 经过上面的学习, 我们已经了解到数组的基本使用, 但是我觉得就是这么使用不是我想要的, 我想要对数组做一些封装。
 
@@ -42,6 +48,15 @@ scores[2] = 3;
   * 获取数组实际存储元素数量
   * 增删改查
   * 动态扩展
+
+
+
+我们来看看怎么设计这样的一个数组?
+
+![avatar](https://github.com/basebase/img_server/blob/master/common/array02.png?raw=true)
+
+数组有存储实际元素的大小, 有一个数组的总大小, 我们可以对数组进行增删改查操作。
+当存入一个实际元素的的时候size就加1, 当删除一个元素的时候size就减1.
 
 
 
@@ -145,3 +160,36 @@ class Array {
 }
 
 ```
+
+
+向数组末尾添加元素流程如下图：
+
+![avatar](https://github.com/basebase/img_server/blob/master/common/array03.jpg?raw=true)
+
+
+向数组任意位置添加元素流程如下图:
+
+![avatar](https://github.com/basebase/img_server/blob/master/common/array04.jpg?raw=true)
+
+
+向数组任意位置删除元素流程如下图:
+
+![avatar](https://github.com/basebase/img_server/blob/master/common/array05.jpg?raw=true)
+
+
+
+
+
+#### 数组泛型
+
+使用泛型，可以让我们的数组放入“任意”数据类型。
+但是不可以放基本数据类型, 只能放类对象, java中基本类型有8种
+
+**boolean, byte, char, short, int, long, float, double**
+
+那我们如果要放基本类型怎么实现呢?
+别着急JDK给我们做了包装类, 分别对应上面8种的基本类型
+
+**Boolean, Byte, Char, Short, Integer, Long, Float, Double**
+
+这样, 我们就可以使用了。
