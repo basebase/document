@@ -32,3 +32,91 @@
   ![avatar](https://github.com/basebase/img_server/blob/master/common/stack02.png?raw=true)
 
   ![avatar](https://github.com/basebase/img_server/blob/master/common/stack03.jpg?raw=true)
+
+
+
+#### 栈的实现
+  * 入栈
+  * 出栈
+  * 栈顶元素
+  * 栈的长度
+  * 栈是否为空
+
+我们从上面几个点来看看怎么设计一个Stack。  
+这里需要注意下, 我们可能会用队列, 数组或者是链表等结构来创建一个栈, 但是栈的功能都是一样的, 只不过是底层数据结构不同, 所以这里抽出一个接口来实现不同的类型的栈。
+
+```java
+public interface Stack<E> {
+    // 获取栈的长度
+    int getSize();
+    // 判断栈是否为空
+    boolean isEmpty();
+    // 数据压栈(add)
+    void push(E e);
+    // 数据弹栈(remove)
+    E pop();
+    // 获取栈顶元素
+    E peek();
+}
+```
+
+
+```java
+/**
+ * Created by Joker on 19/9/14.
+ * 利用数组来实现栈的功能
+ */
+public class ArrayStack<E> implements Stack<E> {
+
+    Array<E> array ;
+
+
+    public ArrayStack(int capacity) {
+        this.array = new Array<>(capacity);
+    }
+
+    public ArrayStack() {
+        this.array = new Array<>();
+    }
+
+    @Override
+    public int getSize() {
+        return array.getSize();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return array.isEmpty();
+    }
+
+    @Override
+    public void push(E e) {
+        array.addLast(e);
+    }
+
+    @Override
+    public E pop() {
+        return array.removeLast();
+    }
+
+    @Override
+    public E peek() {
+        return array.getLast();
+    }
+
+    @Override
+    public String toString() {
+        StringBuffer buff = new StringBuffer();
+        buff.append("Stack: [");
+        for (int i = 0; i < array.getSize(); i ++) {
+            buff.append(array.get(i));
+            if (i < array.getSize() - 1)
+                buff.append(",");
+        }
+
+        buff.append("] top");
+        return buff.toString();
+    }
+}
+
+```
