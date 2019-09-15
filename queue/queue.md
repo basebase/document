@@ -101,3 +101,42 @@ public class ArrayQueue<E> implements Queue<E> {
 通过下图来看看循环队列
 
 ![avatar](https://github.com/basebase/img_server/blob/master/common/queue02.png?raw=true)
+
+
+循环队列的设计
+
+```java
+
+public class LoopQueue<E> implements Queue<E> {
+
+    private E[] data;
+    private int front, tail;
+    private int size;
+
+    public LoopQueue(int capacity) {
+        // 在计算循环数组的时候, 我们需要浪费一个空间, 这样在计算tail + 1 == front的时候就可以用到或者说(tail + 1) % capacity == front
+        data = (E[]) new Object[capacity + 1];
+        front = 0;
+        tail = 0;
+        size = 0;
+    }
+
+    public LoopQueue() {
+        this(10);
+    }
+
+    @Override
+    public int getSize() {
+        return size;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return tail == front;
+    }
+
+    public int getCapacity() {
+        return data.length - 1;
+    }
+}
+```
