@@ -91,3 +91,13 @@ public class ArrayQueue<E> implements Queue<E> {
     }
 }
 ```
+
+
+上面的代码底层是利用数组来实现的队列, 当我们进行出队的时候(即队首元素), 后面的所有元素都要向前移动一个单位。之后size--, 这是我们数组底层删除一个元素的操作。
+由于所有元素都要向前移动一位这个操作在, 所以我们出队操作是O(n)。
+
+假如现在我们不进行元素位置的移动, 记录一下当前的队首在哪。记录队尾的位置新元素添加的位置。
+
+通过下图来看看循环队列
+
+![avatar](https://github.com/basebase/img_server/blob/master/common/queue02.png?raw=true)
