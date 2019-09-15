@@ -107,6 +107,7 @@ public class ArrayQueue<E> implements Queue<E> {
 
 ```java
 
+
 public class LoopQueue<E> implements Queue<E> {
 
     private E[] data;
@@ -126,6 +127,56 @@ public class LoopQueue<E> implements Queue<E> {
     }
 
     @Override
+    public void enqueue(E e) {
+
+        // 这里的取余计算使用的是data.length, 但是resize方法使用的是getCapacity()方法
+        // 区别就是getCapacity里面长度-1, 毕竟我们多开了一个数组空间
+        if ((tail + 1) % data.length == front) {
+            resize(getCapacity() * 2) ;
+        }
+
+        data[tail] = e;
+        tail = (tail + 1) % data.length;
+        size ++;
+    }
+
+    private void resize(int newCapacity) {
+        E[] newData = (E[]) new Object[newCapacity + 1];
+        for (int i = 0 ; i < size; i ++) {
+            newData[i] = data[(i + front) % data.length];
+        }
+
+        data = newData;
+        front = 0;
+        tail = size;
+    }
+
+    @Override
+    public E dequeue() {
+
+        if (isEmpty()) {
+            throw new IllegalArgumentException("队列为空");
+        }
+
+        E ret = data[front];
+        data[front] = null;
+        front = (front + 1) % data.length;
+        size --;
+        if (size == getCapacity() / 4 && getCapacity() / 2 != 0)
+            resize(getCapacity() / 2);
+
+        return ret;
+    }
+
+    @Override
+    public E getFront() {
+        if (isEmpty()) {
+            throw new IllegalArgumentException("队列为空");
+        }
+        return data[front];
+    }
+
+    @Override
     public int getSize() {
         return size;
     }
@@ -138,5 +189,22 @@ public class LoopQueue<E> implements Queue<E> {
     public int getCapacity() {
         return data.length - 1;
     }
+
+    @Override
+    public String toString() {
+        StringBuffer buffer = new StringBuffer();
+        buffer.append(String.format("Queue size = %d , capacity = %d\n", size, getCapacity()));
+        buffer.append("front [");
+        for (int i = front ; i != tail; i = (i + 1) % data.length) {
+            buffer.append(data[i]);
+            if ((i + 1) % data.length != tail) {
+                buffer.append(", ");
+            }
+        }
+
+        buffer.append("] tail");
+        return buffer.toString();
+    }
 }
+
 ```
