@@ -87,3 +87,40 @@ public class LinkedList<E> {
 4.最后head也指向存放666的node节点, 即head = node
 
  ![avatar](https://github.com/basebase/img_server/blob/master/common/linkedlist2.jpg?raw=true)
+
+
+ ```java
+
+     private int size;
+     private Node head;
+
+     public LinkedList() {
+         this.size = 0;
+         this.head = null;
+     }
+
+     // 获取链表元素个数
+     public int getSize() {
+         return size;
+     }
+
+     // 判断链表是否为空
+     public boolean isEmpty() {
+         return size == 0;
+     }
+
+
+     // 在链表头添加新的元素
+     public void addFirst(E e) {
+
+
+ //        Node node = new Node(e);
+ //        node.next = head;
+ //        head = node;
+
+         // 这一句话等价上面三句
+         head = new Node(e, head);
+
+         size ++;
+     }
+ ```
