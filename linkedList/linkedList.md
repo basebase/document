@@ -124,3 +124,52 @@ public class LinkedList<E> {
          size ++;
      }
  ```
+
+
+ 上面, 我们已经实现了在链表头部添加元素, 那么现在我们指定位置添加元素如何处理呢？
+
+ 需要注意的是: 如果指定的是链表头, 由于头部没有上一个节点, 所以需要单独处理一下。
+ 后面通过虚拟头结点来解决。
+
+ 1. 对于这个链表, 要在这个链表索引(链表是无索引的, 这里只是借用索引这个概念来阐述)为2的地方添加一个新的元素666
+
+ 2. 首先遍历找到索引为2的前一个节点prev
+ 3. 然后prev.next指向存放为2的元素节点, 同时存放666节点, node.next也指向它, 因此得到node.next = prev.next(将prev.next赋值给node.next)
+ 4. 之后存放666节点, 即prev.next = node(将node赋值给prev.next)
+
+
+
+ ![avatar](https://github.com/basebase/img_server/blob/master/common/linkedlist3.jpg?raw=true)
+
+
+
+ ```java
+
+ // 在链表末尾添加元素
+     public void addLast(E e) {
+         add(size, e);
+     }
+
+     // 在链表的index(0-based)位置添加元素
+     public void add(int index, E e) {
+         if (index > size || index < 0) {
+             throw new IllegalArgumentException("添加失败, 请输入正确的索引位置");
+         }
+
+         if (index == 0) {
+             addFirst(e);
+         } else {
+             Node prev = head;
+             for (int  i = 0 ; i < index - 1; i ++) {
+                 prev = prev.next;
+             }
+
+ //            Node node = new Node(e);
+ //            node.next = prev.next;
+ //            prev.next = node;
+
+             prev.next = new Node(e, prev.next);
+             size ++;
+         }
+     }
+ ```
