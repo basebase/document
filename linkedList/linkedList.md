@@ -40,6 +40,9 @@
 
 public class LinkedList<E> {
 
+    /**
+      创建一个节点
+    */
     private class Node {
         private E e;
         private Node next;
@@ -64,3 +67,23 @@ public class LinkedList<E> {
     }
 }
 ```
+
+
+#### 如何向链表添加元素
+
+我们最简单的添加方式就是在头部添加, 稍微麻烦一点的话就在指定位置前添加。
+因此, 我们有两种添加方式
+
+  * 头部添加元素
+  * 指定位置添加元素
+
+
+
+我们先来看看, 如何在头部添加元素, 头部添加元素也是最简单的。
+
+1. 假设要将666这个元素添加到链表中。
+2. 相应的需要在Node节点里存放666这个元素, 以及相应的next(指向)
+3. 然后node节点的next指向链表的头, 即node.next = head(将head赋值给node.next)
+4.最后head也指向存放666的node节点, 即head = node
+
+ ![avatar](https://github.com/basebase/img_server/blob/master/common/linkedlist2.jpg?raw=true)
