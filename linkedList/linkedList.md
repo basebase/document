@@ -216,6 +216,9 @@ public void add(int index, E e) {
 ```
 
 现在, 我们在从位置0上添加元素5就会发现
+
 prev = dummyHead
+
 而i < index 吗？不小于则不进行next,所以dummyHead的next是0
+
 我们从新创建一个元素5, 他的下一个next就是0, 然后从新赋值给prev.next即dummyHead.next = 新元素数据
