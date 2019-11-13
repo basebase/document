@@ -151,7 +151,7 @@ public class LinkedList<E> {
      }
 
      // 在链表的index(0-based)位置添加元素
-     public void add(int index, E e) {
+     public void add(int index, E e) {Â
          if (index > size || index < 0) {
              throw new IllegalArgumentException("添加失败, 请输入正确的索引位置");
          }
@@ -173,3 +173,49 @@ public class LinkedList<E> {
          }
      }
  ```
+
+
+ ### 虚拟头结点
+ 在向链表添加元素的时候, 我们遇到了一个问题, 在链表头添加元素和其它位置添加元素逻辑上会有区别。
+ 为什么在为链表头添加元素会有不同: 这是因为要找到待添加元素之前的位置, 由于链表头没有钱一个节点, 所以在逻辑上会特殊一些。
+
+ 这也就是衍生出了"虚拟头节点"。
+
+
+ ![avatar](https://github.com/basebase/img_server/blob/master/common/linkedlist4.png?raw=true)
+
+ 其中, 虚拟头结点中是不包含任何数据的.
+
+更新后的代码
+
+```java
+
+// - private Node head ;
+// +
+private Node dummyHead ; // 虚拟头结点
+
+public LinkedList() {
+       this.size = 0;
+       // +
+       this.dummyHead = new Node(null, null); // 虚拟头结点, 里面不存放内容
+// -       this.head = null;
+}
+
+public void add(int index, E e) {
+        if (index < 0 || index > size) {
+            throw new IllegalArgumentException("请传入正确的位置.");
+        }
+
+        Node prev = dummyHead;
+        for (int i = 0 ; i < index /*index - 1*/; i ++) {
+            prev = prev.next;
+        }
+
+        prev.next = new Node(e, prev.next);
+    }
+```
+
+现在, 我们在从位置0上添加元素5就会发现
+prev = dummyHead
+而i < index 吗？不小于则不进行next,所以dummyHead的next是0
+我们从新创建一个元素5, 他的下一个next就是0, 然后从新赋值给prev.next即dummyHead.next = 新元素数据
