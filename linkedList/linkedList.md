@@ -222,3 +222,88 @@ prev = dummyHead
 而i < index 吗？不小于则不进行next,所以dummyHead的next是0
 
 我们从新创建一个元素5, 他的下一个next就是0, 然后从新赋值给prev.next即dummyHead.next = 新元素数据
+
+
+
+
+##### 链表查询与查找
+
+```java
+
+/**
+     * 获取元素
+     * @param index
+     * @return
+     */
+    public E get(int index) {
+        if (index < 0 || index >= size) {
+            throw new IllegalArgumentException("请传入正确的位置.");
+        }
+
+        Node cur = dummyHead.next; // 从索引0开始
+
+        for (int i = 0; i < index; i ++) {
+            cur = cur.next;
+        }
+
+        return cur.e;
+    }
+
+    // 获取第一个元素
+    public E getFirst() {
+        return get(0);
+    }
+
+    // 获取最后一个元素
+    public E getLaster() {
+        return get(size - 1);
+    }
+
+    /***
+     * 设置元素
+     * @param index
+     * @param e
+     */
+    public void set(int index, E e) {
+        if (index < 0 || index >= size) {
+            throw new IllegalArgumentException("请传入正确的位置.");
+        }
+
+        Node cur = dummyHead.next; // 从索引0开始
+
+        for (int i = 0; i < index; i ++) {
+            cur = cur.next;
+        }
+
+        cur.e = e;
+    }
+
+
+    /***
+     * 判断是否存在元素
+     * @param e
+     * @return
+     */
+    public boolean contains(E e ) {
+        Node cur = dummyHead.next;
+        while (cur != null) {
+            if (cur.e.equals(e)) {
+                return true;
+            }
+            cur = cur.next;
+        }
+
+        return false;
+    }
+
+
+    @Override
+    public String toString() {
+        StringBuilder res = new StringBuilder();
+        for (Node cur = dummyHead.next; cur != null; cur = cur.next) {
+            res.append(cur + "->");
+        }
+        res.append("NULL");
+        return res.toString();
+    }
+```
