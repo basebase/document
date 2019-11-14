@@ -307,3 +307,51 @@ prev = dummyHead
         return res.toString();
     }
 ```
+
+
+
+#### 链表删除
+
+ ![avatar](https://github.com/basebase/img_server/blob/master/common/linkedlist05.png?raw=true)
+
+
+上图，比如我们要删除索引为2的位置数据的时候, 我们从虚拟头结点(dummyHead)开始遍历, 找到待删除元素之前的元素
+然后把待删除之前的元素的next指向删除元素的next, 之后删除元素的next置为null
+
+
+
+```java
+
+/***
+     * 删除元素
+     * @param index
+     * @return
+     */
+    public E remove(int index) {
+        if (index < 0 || index >= size) {
+            throw new IllegalArgumentException("请传入正确的位置.");
+        }
+
+        Node prev = dummyHead;
+        for (int i = 0 ; i < index ; i ++) {
+            prev = prev.next;
+        }
+
+        Node retNode = prev.next;
+        prev.next = retNode.next;
+        retNode.next = null;
+
+        size --;
+
+        return retNode.e;
+    }
+
+    public E removeFirst() {
+        return remove(0);
+    }
+
+    public E removeLast() {
+        return remove(size - 1);
+    }
+
+```
