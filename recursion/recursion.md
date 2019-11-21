@@ -128,13 +128,16 @@ public ListNode removeElements(ListNode head, int val) {
 
 现在我们有一组数组, 我们如何通过递归的形式进行累加并返回结果呢?
 
-通过下面这张图片来看看递归是如何调用的(后面还会详细介绍递归调用流程)
+看看递归是如何调用的(后面还会详细介绍递归调用流程)
 
 ![avatar](https://github.com/basebase/img_server/blob/master/common/recursion01.png?raw=true)
 
 
 ```java
 
+/**
+  递归返回数组中的总和
+*/
 public class ArrayElementSum {
 
     public static int sum(int[] arr) {
