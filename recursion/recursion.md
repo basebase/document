@@ -5,9 +5,9 @@
 链表练习主要以LeetCode为主, 然后给大家认识一下基础的递归使用以及调用流程等。
 
 
-#### LeetCode链表问题
+### LeetCode链表问题
 
-##### 203. 移除链表元素
+#### 203. 移除链表元素
 
 ```Text
 删除链表中等于给定值 val 的所有节点
@@ -94,5 +94,62 @@ public ListNode removeElements(ListNode head, int val) {
 
         // 虚拟节点是不会外暴露的, 需要需要next
         return dummyHead.next;
+}
+```
+
+
+
+
+### 递归
+
+##### 递归简介
+是指在函数的定义中使用函数自身的方法, 即自己调用自己。<br />
+本质上, 将原来的问题转换为更小的同一问题。
+
+#### 递归的优缺点
+  * 优点
+    * 大问题化为小问题,可以极大的减少代码量
+    * 用有限的语句来定义对象的无限集合
+    * 代码更简洁清晰，可读性更好
+
+  * 缺点
+    * 递归调用函数,浪费空间
+    * 递归太深容易造成堆栈的溢出
+
+```Text
+参考:
+  https://blog.csdn.net/acmman/article/details/80547512
+  https://blog.csdn.net/acmman/article/details/80547512
+```
+
+
+
+#### 第一个递归例子
+
+现在我们有一组数组, 我们如何通过递归的形式进行累加并返回结果呢?
+
+通过下面这张图片来看看递归是如何调用的(后面还会详细介绍递归调用流程)
+
+![avatar](https://github.com/basebase/img_server/blob/master/common/recursion01.png?raw=true)
+
+
+```java
+
+public class ArrayElementSum {
+
+    public static int sum(int[] arr) {
+        return sum(arr, 0) ;
+    }
+
+    private static int sum(int[] arr, int l) {
+        if (l == arr.length)
+            return 0; // 递归出口, 问题已经最小无法在分解了
+        return arr[l] + sum(arr, ++ l); // 递归将问题更小化
+    }
+
+    public static void main(String[] args) {
+        int[] nums = {1, 2, 3, 4, 5, 6, 7, 8} ;
+        System.out.println(sum(nums));
+    }
 }
 ```
