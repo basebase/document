@@ -119,7 +119,7 @@ public ListNode removeElements(ListNode head, int val) {
 ```Text
 参考:
   https://blog.csdn.net/acmman/article/details/80547512
-  https://blog.csdn.net/acmman/article/details/80547512
+  https://blog.csdn.net/laoyang360/article/details/7855860
 ```
 
 
