@@ -167,7 +167,7 @@ public class ArrayElementSum {
 
 
 透过下图, 我们更加直观的了解上面的递归例子的执行流程把。
-下图:
+
 ![avatar](https://github.com/basebase/img_server/blob/master/common/recursion001.png?raw=true)
 
 假设现在数组中只有数字[6, 10] 方便进行调试。数组长度为2。
