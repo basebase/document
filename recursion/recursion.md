@@ -183,3 +183,33 @@ sum函数执行过程为:
 可能会迷糊的一些点:
   1. sum函数在调用sum函数的时候, 是新开辟的空间, 对应的参数参数值都是不同的,所以里面的变量是相互不会影响的。
   2. 千万不要被sum函数给迷惑了, 其本质上就是相当于A函数调用B函数, B函数调用C函数, 只不过现在是sum调用sum调用sum而已。我们可以编个号sum$0调用sum$1,sum$1调用sum$2, 然后sum$2的把结果返回给了sum$1, sum$1进行余下操作把结果sum$0, sum$0做完余下操作返回最终的结果值。这样是不是会好一点理解呢?
+
+
+<br /><br />
+
+上面的例子可能会比较简单一点, 那下面我们来稍微复杂一点的, 比如删除链表的元素。
+![avatar](https://github.com/basebase/img_server/blob/master/common/recursion002.png?raw=true)
+
+
+removeElements执行流程只有三步
+  1. 判断当前头结点是否为null, 如果为null则返回
+  2. 当前头结点的下一个节点为谁呢? 现在还不知道, 一直重复步骤1和2, 知道步骤1满足为止
+  3. 如果当前头结点是要被删除的节点, 则返回的是他的下一个节点数据, 否则返回当前头结点数据
+
+
+![avatar](https://github.com/basebase/img_server/blob/master/common/recursion003.png?raw=true)
+
+1. 当我们以6为头结点执行第一步判断不为空则进入第二步"6"的下一个节点当前还不可知
+2. 当我们以7为头结点执行第一步判断不为空则进入第二步"7"的下一个节点当前还不可知
+3. 当我们以8为头结点执行第一步判断不为空则进入第二步"8"的下一个节点当前还不可知
+4. 当我们传入NULL后
+
+下图
+
+![avatar](https://github.com/basebase/img_server/blob/master/common/recursion004.png?raw=true)
+5. 返回NULL值
+6. 头结点为8的next值为null, 判断当前头结点是否需要被删除, 当前节点不被删除返回 8 -> NULL
+7. 头结点为7的next值为8 -> NULL, 判断是否需要被删除, 需要删除则返回下一个节点即: 8 -> NULL
+8. 头结点为6的next值为8 -> NULL, 判断是否需要被删除, 不需要则返回 6 -> 8 -> NULL返回数据
+
+到这里就已经结束了整个调用流程了。
