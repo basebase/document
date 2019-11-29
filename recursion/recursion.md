@@ -207,6 +207,7 @@ removeElements执行流程只有三步
 下图
 
 ![avatar](https://github.com/basebase/img_server/blob/master/common/recursion004.png?raw=true)
+
 5. 返回NULL值
 6. 头结点为8的next值为null, 判断当前头结点是否需要被删除, 当前节点不被删除返回 8 -> NULL
 7. 头结点为7的next值为8 -> NULL, 判断是否需要被删除, 需要删除则返回下一个节点即: 8 -> NULL
