@@ -93,3 +93,48 @@ class Node {
 二叉树中每个元素都需要进行比较, 而且并不是都是一个满二叉树
 
 ![avatar](https://github.com/basebase/img_server/blob/master/common/bst11.png?raw=true)
+
+
+
+#### 实战部分
+经过前面的学习, 我们已经大概清楚什么是二分搜索树了。下面我们通过代码来实现把。
+
+
+
+```java
+
+/****
+ *
+ * 存储的元素需要有可比较性, 所以我们需要继承Comparable
+ * @param <E>
+ */
+public class BST<E extends Comparable<E>> {
+
+    private class Node {
+        E e ;
+        Node left ;
+        Node right ;
+
+        public Node(E e) {
+            this.e = e;
+            left = null ;
+            right = null ;
+        }
+    }
+
+    private Node root ;
+    private int size ;
+
+    public BST() {
+        this.root = null;
+    }
+
+    public int size() {
+        return size ;
+    }
+
+    public boolean isEmpty() {
+        return size == 0 ;
+    }
+}
+```
