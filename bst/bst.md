@@ -138,3 +138,63 @@ public class BST<E extends Comparable<E>> {
     }
 }
 ```
+
+
+##### 添加元素
+如何向二分搜索树添加一个元素?
+```text
+假设当前二分搜索树为NULL, 我们添加元素5就作为root
+即:             5
+              /  \
+
+如果现在在来一个元素3呢? 更具上面了解的特性, 应该放在树的左侧
+即:             5
+              /  \
+             3    NULL
+
+如果再来一个元素9那么则放在该树的右侧
+即:             5
+              /  \
+             3    9
+
+如果我们在加入一个元素9, 这里我们不进行插入, 我们的二分搜索树不会插入重复数据
+
+现在, 我们有了一个简单的二分搜索树, 如果在插入新增的元素, 也是依次查询判断, 直到没有可以比较的节点, 就进行插入。
+```
+
+![avatar](https://github.com/basebase/img_server/blob/master/common/bst12.png?raw=true)
+
+
+上面的图片也更加直观的展示如何插入一个元素了, 下面我们通过编写代码来实现如何插入元素。
+
+```java
+
+public void add(E e) {
+  // 如果当前树节点为null, 直接让当前元素为root
+  if (root == null) {
+    this.root = new Node(e) ;
+    size ++ ;
+  } else {
+    // 如果树不为空, 则通过递归进行插入
+    add(root, e) ;
+  }
+}
+
+public void add(Node node, E e) {
+  if (e.compareTo(node.e) == 0) { // 如果是相同的值, 则直接终止
+    return ;
+  } else if (e.compareTo(node.e) < 0 && node.left == null) { // 如果小于并且该节点下面也没有元素了, 则插入该元素
+    node.left = new Node(e) ;
+    size ++ ;
+  } else if (e.compareTo(node.e) > 0 && node.right == null) { // 如果大于并且该节点下面也没有元素了, 则插入该元素
+    node.right = new Node(e) ;
+    size ++ ;
+  }
+
+  if (e.compareTo(node.e) < 0) {
+    add(node.left, e);
+  } else {
+    add(node.right, e);  
+  }
+}
+```
