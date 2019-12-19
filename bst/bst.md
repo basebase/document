@@ -180,7 +180,7 @@ public void add(E e) {
   }
 }
 
-public void add(Node node, E e) {
+private void add(Node node, E e) {
   if (e.compareTo(node.e) == 0) { // 如果是相同的值, 则直接终止
     return ;
   } else if (e.compareTo(node.e) < 0 && node.left == null) { // 如果小于并且该节点下面也没有元素了, 则插入该元素
