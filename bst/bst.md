@@ -186,9 +186,11 @@ private void add(Node node, E e) {
   } else if (e.compareTo(node.e) < 0 && node.left == null) { // 如果小于并且该节点下面也没有元素了, 则插入该元素
     node.left = new Node(e) ;
     size ++ ;
+    return ;
   } else if (e.compareTo(node.e) > 0 && node.right == null) { // 如果大于并且该节点下面也没有元素了, 则插入该元素
     node.right = new Node(e) ;
     size ++ ;
+    return ;
   }
 
   if (e.compareTo(node.e) < 0) {
