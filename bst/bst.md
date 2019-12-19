@@ -259,3 +259,38 @@ private Node add(Node node, E e) {
 ```
 
 以上就是如何向二分搜索树中插入一个元素全过程。
+
+
+
+##### 二分搜索树查找
+
+
+如果上面的插入操作你已经理解了, 那么查找操作几乎是手到擒来。它比插入操作更简单, 因为不需要维护树的结构, 只需要判断是否存在。
+
+
+```java
+
+public boolean contains(E e) {
+  return contains(root, e) ;
+}
+
+// 判断二分搜索树是否包含该元素
+private boolean contains(Node node, E e) {
+  if (node == null) {
+    return false ; // 如果树为null, 则肯定不包含
+  }
+
+  if (e.compareTo(node.e) == 0) {
+    return true ; // 包含元素
+  } else if (e.compareTo(node.e) < 0) {
+    return contains(node.left, e) ;
+  } else {
+    return contains(node.right, e) ;
+  }
+}
+```
+
+整体逻辑几乎是一模一样的, 所以这里不做过多的说明。
+
+
+##### 遍历
