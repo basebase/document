@@ -294,3 +294,87 @@ private boolean contains(Node node, E e) {
 
 
 ##### 遍历
+
+1. 前序遍历  
+* 定义: 先访问根节点, 然后前序遍历左子树, 在前序遍历右子树
+
+前序遍历是怎么个遍历方式呢? 如下:
+
+```text
+图:                 5
+                  /  \
+                 3    6
+                / \    \
+               2   4    8
+
+更具上面的定义, 在设计一个递归函数的时候, 我们要先输出根节点, 然后递归左子树, 左子树没有节点后在遍历右子树。
+
+输出: 5->3->2->4->6->8
+```
+
+
+```java
+
+public void preOrder() {
+  preOrder(root);
+}
+
+// 前序遍历二分搜索树
+private void preOrder(Node node) {
+  if (node == null)
+    return ;
+  System.out.println(node.e);
+  preOrder(node.left); // 遍历左子树
+  preOrder(node.right); // 遍历右子树
+}
+```
+
+现在我们重写toString方法, 利用前序遍历的方法来输出看看。
+
+```java
+@Override
+public String toString() {
+  StringBuffer res = new StringBuffer();
+  generateBSTString(root, 0, res);
+  return res.toString();
+}
+
+private void generateBSTString(Node node, int depth, StringBuffer res) {
+  if (node == null) {
+    res.append(generateDepthString(depth) + "null\n");
+    return ;
+  }
+
+  res.append(generateDepthString(depth) + node.e + "\n");
+  generateBSTString(node.left, depth + 1, res);
+  generateBSTString(node.right, depth + 1, res);
+}
+
+// depth深度, 这样加入--就能知道在不在一个层级
+private String generateDepthString(int depth) {
+  StringBuffer res = new StringBuffer();
+  for (int i = 0; i < depth; i ++) {
+    res.append("--");
+  }
+
+  return res.toString();
+}
+```
+上面的toString最终会输出如下结果集:
+```text
+5
+--3
+----2
+------null
+------null
+----4
+------null
+------null
+--6
+----null
+----8
+------null
+------null
+
+这样就知道3和6是同一个级别, 3是2的父节点
+```
