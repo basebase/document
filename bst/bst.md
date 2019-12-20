@@ -296,7 +296,7 @@ private boolean contains(Node node, E e) {
 ##### 遍历
 
 1. 前序遍历  
-* 定义: 先访问根节点, 然后前序遍历左子树, 在前序遍历右子树
+* 定义: 先访问根节点, 然后前序遍历左子树, 在前序遍历右子树(中, 左, 右)
 
 前序遍历是怎么个遍历方式呢? 如下:
 
@@ -377,4 +377,65 @@ private String generateDepthString(int depth) {
 ------null
 
 这样就知道3和6是同一个级别, 3是2的父节点
+```
+
+2. 中序遍历  
+* 定义: 遍历根节点的左子树, 然后访问根节点, 最后遍历右子树(左中右)
+
+```text
+图:                 5
+                  /  \
+                 3    6
+                / \    \
+               2   4    8
+
+还是和上面一样的树结构, 如果不通过运行代码, 大家知道会输出什么结果吗?
+输出: 2->3->4->5->6->8
+
+你会发现输出来之后, 是一个有顺序的, 其实很正常所有左边的节点数据都比中间的值要小, 所有右边的数据都比中间值要大。所以输出来是一个有顺序的排列。
+```
+
+```java
+public void inOrder() {
+  inOrder(root);
+}
+
+// 中序遍历节点数据
+private void inOrder(Node node) {
+  if (node == null) return ;
+  inOrder(node.left);
+  System.out.println(node.e);
+  inOrder(node.right);
+}
+```
+
+
+3. 后序遍历
+* 定义: 从左到右先叶子后节点的方式遍历访问左右子树, 最后访问根节点(左右中)
+
+```text
+图:                 5
+                  /  \
+                 3    6
+                / \    \
+               2   4    8
+
+还是和上面一样的树结构, 如果不通过运行代码, 大家知道会输出什么结果吗?
+输出: 2->4->3->8->6->5
+```
+
+
+```java
+
+public void postOrder() {
+  postOrder(root);
+}
+
+// 后序遍历
+private void postOrder(Node node) {
+  if (node == null) return ;
+  postOrder(node.left);
+  postOrder(node.right);
+  System.out.println(node.e);
+}
 ```
