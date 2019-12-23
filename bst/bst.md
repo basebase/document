@@ -535,3 +535,41 @@ public void levelOrder() {
    /    \    / \                     /    \    / \                  /    \                     
   13    37  42  53                  13    37  42  53               13    37             
 ```
+
+
+我们通过代码先来查询出最小和最大值。
+
+```java
+
+public E minimum() {
+  if (size == 0)
+    throw new IllegalArgumentException("BST is Empty");
+  return minimum(root).e;
+}
+
+// 查询二分搜索树最小值
+// 其实这种完全就破坏树结构了, 和链表没区别了, 一直扫左边数据
+private Node minimum(Node node) {
+  // 当前节点的left如果为空就表示当前节点为叶子节点退出递归条件
+  if (node.left == null)
+      return node ;
+  // 否则一直往左查询
+  return minimum(node.left);
+}
+
+
+public E maximum() {
+  if (size == 0)
+    throw new IllegalArgumentException("BST is Empty");
+  return maximum(root).e;
+}
+
+// 查询二分搜索树最大值
+private Node maximum(Node node) {
+  // 当前节点的left如果为空就表示当前节点为叶子节点退出递归条件
+  if (node.right == null)
+    return node ;
+  // 否则一直往右查询
+  return maximum(node.right);
+}
+```
