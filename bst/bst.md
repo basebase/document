@@ -439,3 +439,53 @@ private void postOrder(Node node) {
   System.out.println(node.e);
 }
 ```
+
+
+4. 层次遍历
+
+
+```text
+图:                 5
+                  /  \
+                 3    6
+                / \    \
+               2   4    8
+
+输出: 5->3->6->2->4->8
+
+层次遍历我们无法通过递归来实现, 我们需要借助队列来实现层次遍历。
+
+第一次, 28进入队列, 然后获取28的左右子树(3和6)
+第二次获取3的左右子树(2和4)
+第三次获取6的左右子树(8)
+
+      F  |  5 |     F  |  5 |      F  |  5 |      F  |  5 |
+         |    |        |  3 |         |  3 |         |  3 |
+         |    |        |  6 |         |  6 |         |  6 |
+         |    |        |    |         |  2 |         |  2 |
+         |    |        |    |         |  4 |         |  4 |
+         |    |        |    |         |    |         |  8 |
+      T  |    |     T  |    |      T  |    |      T  |    |
+
+```
+
+通过上面直观的图例, 我们看看代码如何实现把.
+
+```java
+
+// 层序遍历
+public void levelOrder() {
+  Queue<Node> q = new LinkedList<>();
+  q.add(root);
+  while (!q.isEmpty()) {
+    Node cur = q.remove();
+    System.out.println(cur.e);
+
+    if (cur.left != null)
+        q.add(cur.left);
+
+    if (cur.right != null)
+        q.add(cur.right);
+  }
+}
+```
