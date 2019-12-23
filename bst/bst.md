@@ -573,3 +573,47 @@ private Node maximum(Node node) {
   return maximum(node.right);
 }
 ```
+
+
+经过上面查找最小和最大值的基础, 其实我们在删除节点只不过是说要稍微处理一下左右子树的问题, 但其实和add()方法有点类似, 最后返回节点进行挂载.
+
+```java
+
+public E removeMin() {
+  E e = minimum();
+  root = removeMin(root);
+  return e ;
+}
+
+// 删除掉以node为根的二分搜索树中最小节点
+// 返回删除节点后新的二分搜索树的根
+private Node removeMin(Node node) {
+  if (node.left == null) {
+    Node rightNode = node.right;
+    node.right = null;
+    size --;
+    return rightNode;
+  }
+
+  node.left = removeMin(node.left);
+  return node;
+}
+
+public E removeMax() {
+  E e = maximum();
+  root = removeMax(root);
+  return e ;
+}
+
+private Node removeMax(Node node) {
+  if (node.right == null) {
+    Node leftNode = node.left;
+    node.left = null;
+    size --;
+    return leftNode;
+  }
+
+  node.right = removeMax(node.right);
+  return node;
+}
+```
