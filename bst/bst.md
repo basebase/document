@@ -686,3 +686,52 @@ private Node removeMax(Node node) {
          / \   / \                               \                         / \    \
         42 53 59 63                               63                      42 53   63
 ```
+
+
+好了, 通过上面的学习, 了解了几种场景解决方式, 现在通过代码来看看如何解决。
+
+```java
+
+public void remove(E e) {
+  root = remove(root, e);
+}
+
+private Node remove(Node node, E e) {
+  if (e.compareTo(node.e) == 0) {
+    // 第一种情况: 删除只有左孩子的节点(简单)
+    if(node.left == null) {
+      Node rightNode = node.right;
+      node.right = null;
+      size --;
+      return rightNode;
+    }
+
+    // 第二种情况: 删除只有右孩子的节点(简单)
+    if (node.right == null) {
+      Node leftNode = node.left;
+      node.left = null;
+      size --;
+      return leftNode;
+    }
+
+    /***
+     * 待删除节点左右子树都不为空的情况
+     */
+     // 1. 找到比待删除节点大的最小节点, 即待删除节点右子树中最小的节点(找到后继节点)
+     // 2. 用后继节点顶替待删除节点的位置
+     Node succeed = minimum(node.right);
+     // 返回删除最小值后的一个新树, 最小值已经被我们记录住了, 然后设置左右子树
+     succeed.right = removeMin(node.right);
+     succeed.left = node.left;
+     // 这里之所以没有size--, 是因为removeMin方法已经做了
+     node.left = node.right = null;
+     return succeed;
+   } else if (e.compareTo(node.e) > 0) {
+     node.right = remove(node.right, e);
+     return node;
+   } else {
+     node.left = remove(node.left, e);
+     return node;
+   }
+}
+```
