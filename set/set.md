@@ -90,3 +90,92 @@ public class BSTSetTest {
     }
 }
 ```
+
+
+
+#### 基于链表实现集合
+
+这里使用的是我们在学习链表时候的累, 但是需要扩展一个方法, 之前没有删除元素的方法, 现在新增一个.
+
+```java
+
+// linkedlist.java
+// 从链表中删除元素
+public void removeElement(E e) {
+    Node prev = dummyHead;
+    while (prev.next != null) {
+        if (prev.next.e.equals(e)) {
+            break;
+        }
+
+        prev = prev.next;
+    }
+
+    if (prev.next != null) {
+        Node delNode = prev.next;
+        prev.next = delNode.next;
+        delNode.next = null;
+        size -- ;
+    }
+}
+```
+
+
+```java
+public class LinkedListSet<E> implements Set<E> {
+
+    private LinkedList<E> list;
+
+    public LinkedListSet() {
+        this.list = new LinkedList<>();
+    }
+
+    @Override
+    public void add(E e) {
+        if (!list.contains(e)) {
+            // 如果不包含元素则进行添加
+            list.addFirst(e);
+        }
+    }
+
+    @Override
+    public void remove(E e) {
+        list.removeElement(e);
+    }
+
+    @Override
+    public boolean contains(E e) {
+        return list.contains(e);
+    }
+
+    @Override
+    public int getSize() {
+        return list.getSize();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return list.isEmpty();
+    }
+}
+```
+
+测试方法
+```java
+public static void main(String[] args) {
+        Set<Integer> set = new LinkedListSet<>();
+        set.add(1);
+        set.add(2);
+        set.add(3);
+        set.add(2);
+        set.add(1);
+        set.add(3);
+        set.add(3);
+        set.add(3);
+        System.out.println(set.getSize());
+
+        set.remove(2);
+        System.out.println(set.getSize());
+
+}
+```
