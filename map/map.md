@@ -192,3 +192,208 @@ public static void main(String[] args) {
         System.out.println(map.get("K"));
 }
 ```
+
+
+
+#### 基于二分搜索树实现映射数据结构
+
+利用二分搜索树的话, 之前写的也是不能使用的。所以我们需要重新构建一个Node。
+
+```java
+
+
+public class BSTMap<K extends Comparable<K>, V> implements Map<K, V> {
+
+
+    private class Node {
+        public K key ;
+        public V value ;
+        public Node left ;
+        public Node right ;
+
+        public Node(K key, V value) {
+            this.key = key;
+            this.value = value;
+            this.left = null;
+            this.right = null;
+        }
+    }
+
+    private Node root ;
+    private int size ;
+
+    public BSTMap() {
+        this.root = null;
+        this.size = 0;
+    }
+
+    private Node getNode(Node node , K key) {
+        if (node == null)
+            return null;
+
+        if (node.key.compareTo(key) == 0)
+            return node;
+        else if (node.key.compareTo(key) < 0)
+            return getNode(node.left, key);
+        else
+            return getNode(node.right, key);
+    }
+
+    @Override
+    public void add(K key, V value) {
+        root = add(root, key, value);
+    }
+
+    private Node add(Node node, K key, V value) {
+        if (node == null) {
+            Node n = new Node(key, value);
+            size ++ ;
+            return n;
+        }
+
+        if (node.key.compareTo(key) > 0) {
+            node.right = add(node.right, key, value);
+        } else if (node.key.compareTo(key) < 0) {
+            node.left = add(node.left, key, value);
+        } else {
+            // 如果存在key则更新数据
+            node.value = value;
+        }
+
+        return node;
+    }
+
+
+    private Node minimum(Node node) {
+        if (node.left == null)
+            return node ;
+        return minimum(node.left);
+    }
+
+    private Node removeMin(Node node) {
+        if (node.left == null) {
+            Node rightNode = node.right;
+            node.right = null;
+            size --;
+            return rightNode;
+        }
+
+        node.left = removeMin(node.left);
+        return node;
+    }
+
+    private Node remove(Node node, K key) {
+
+        if (node.key.compareTo(key) == 0) {
+            if(node.left == null) {
+                Node rightNode = node.right;
+                node.right = null;
+                size --;
+                return rightNode;
+            }
+
+            // 第二种情况: 删除只有右孩子的节点(简单)
+            if (node.right == null) {
+                Node leftNode = node.left;
+                node.left = null;
+                size --;
+                return leftNode;
+            }
+
+            /***
+             * 待删除节点左右子树都不为空的情况
+             */
+            // 1. 找到比待删除节点大的最小节点, 即待删除节点右子树中最小的节点(找到后继节点)
+            // 2. 用后继节点顶替待删除节点的位置
+            Node succeed = minimum(node.right);
+            // 返回删除最小值后的一个新树, 最小值已经被我们记录住了, 然后设置左右子树
+            succeed.right = removeMin(node.right);
+            succeed.left = node.left;
+            // 这里之所以没有size--, 是因为removeMin方法已经做了
+            node.left = node.right = null;
+            return succeed;
+        } else if (node.key.compareTo(key) > 0) {
+            node.right = remove(node.right, key);
+            return node;
+        } else {
+            node.left = remove(node.left, key);
+            return node;
+        }
+    }
+
+    @Override
+    public V remove(K key) {
+
+        Node node = getNode(root, key);
+        if (node != null) {
+            root = remove(root, key);
+            return node.value;
+        }
+
+        return null;
+    }
+
+    @Override
+    public void set(K key, V newValue) {
+        Node node = getNode(root, key);
+        if (node == null)
+            throw new IllegalArgumentException("key=" + key + " 不存在, 更新失败!");
+        node.value = newValue;
+    }
+
+    @Override
+    public boolean contains(K key) {
+        return getNode(root, key) != null;
+    }
+
+    @Override
+    public V get(K key) {
+        Node node = getNode(root, key);
+        return node == null ? null : node.value;
+    }
+
+    @Override
+    public int getSize() {
+        return size;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return size == 0;
+    }
+}
+```
+
+测试一下
+
+```java
+
+public static void main(String[] args) {
+        String[] words = {"A", "B", "C", "D", "E", "A", "A", "A", "B", "B", "C", "C", "F", "F", "F", "K",};
+        Map<String, Integer> map = new BSTMap<>();
+
+        for (String word : words) {
+            if (map.contains(word)) {
+                Integer v = map.get(word) + 1;
+                map.set(word, v);
+            } else {
+                map.add(word, 1);
+            }
+        }
+
+        System.out.println("总共: " + map.getSize());
+
+        System.out.println(map.get("A"));
+        System.out.println(map.get("B"));
+        System.out.println(map.get("C"));
+        System.out.println(map.get("D"));
+        System.out.println(map.get("E"));
+        System.out.println(map.get("F"));
+        System.out.println(map.get("K"));
+
+        Integer v = map.remove("A");
+        System.out.println("A " + v);
+        System.out.println(map.get("A"));
+        System.out.println(map.get("K"));
+}
+```
