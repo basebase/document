@@ -13,9 +13,15 @@
 
 
 二叉堆:  
-  1. 结构性质  
+  1. 性质  
     + 二叉堆是一棵完全二叉树
-    + 
+    + 堆中的节点值总是不大于其父亲节点的值, 这种我们一般称为最大堆。反之亦然我们称为最小堆。
 
 
+
+图1-1
 ![avatar](https://github.com/basebase/img_server/blob/master/common/heap01.png?raw=true)
+
+
+图1-2
+![avatar](https://github.com/basebase/img_server/blob/master/common/heap02.png?raw=true)
