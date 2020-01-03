@@ -41,3 +41,56 @@
 图1-3
 ![avatar](https://github.com/basebase/img_server/blob/master/common/heap03.png?raw=true)
 <br /><br />
+
+
+#### 最大堆的设计实现
+
+##### 初步结构
+
+由于堆中的元素是需要进行比较的, 所以插入进来的元素都是需要带有可比较性的。这里我们继承Comparable即可。
+这里我们用的是java自带的动态数组, 这样避免空间不充足问题。
+
+为了方便查找元素的父节点以及左右孩子节点, 我们将其封装成方法, 这样无论是从数组下标0或者下标1开始对于我们来说
+都是不关的, 我们只关心返回正确的节点索引位置数据。
+
+```java
+
+public class MaxHeap<E extends Comparable<E>> {
+
+    private ArrayList<E> array;
+
+    public MaxHeap(int capacity) {
+        this.array = new ArrayList<>(capacity);
+    }
+
+    public MaxHeap() {
+        this.array = new ArrayList<>();
+    }
+
+    public int size() {
+        return array.size();
+    }
+
+    public boolean isEmpty() {
+        return array.size() == 0;
+    }
+
+    // 返回父元素在二叉堆中数组的索引位置
+    private int parent(int index) {
+        if (index == 0)
+            throw new IllegalArgumentException("该索引没有父节点");
+        return (index - 1) / 2 ;
+    }
+
+    // 返回左孩子索引
+    private int leftChild(int index) {
+        return index * 2 + 1;
+    }
+
+    // 返回孩子索引
+    private int rightChild(int index) {
+        return index * 2 + 2;
+    }
+
+}
+```
