@@ -12,11 +12,22 @@
   堆(heap)的实现通常是通过构造二叉堆, 因为应用较为普遍, 当不加限定时, 堆通常指的就是二叉堆。
 
 
-二叉堆:  
-  1. 性质  
-    + 二叉堆是一棵完全二叉树
-    + 堆中的节点值总是不大于其父亲节点的值, 这种我们一般称为最大堆。反之亦然我们称为最小堆。
-
+二叉堆:
++ 二叉堆是一棵完全二叉树(参考图1-1)
++ 堆中的节点值总是不大于其父亲节点的值, 这种我们一般称为最大堆。反之亦然我们称为最小堆。(参考图1-2)
++ 利用数组实现二叉堆(参考图1-3)
+  + 使用下标0的公式:
+    ```text
+      parent(i) = i / 2
+      left child (i) = 2 * i
+      right child (i) = 2 * i + 1
+    ```
+  + 使用下标1的公式:
+    ```text
+      parent(i) = (i - 1) / 2
+      left child (i) = 2 * i + 1
+      right child (i) = 2 * i + 2
+    ```
 
 
 图1-1
@@ -25,3 +36,7 @@
 
 图1-2
 ![avatar](https://github.com/basebase/img_server/blob/master/common/heap02.png?raw=true)
+
+
+图1-3
+![avatar](https://github.com/basebase/img_server/blob/master/common/heap03.png?raw=true)
