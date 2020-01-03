@@ -32,11 +32,12 @@
 
 图1-1
 ![avatar](https://github.com/basebase/img_server/blob/master/common/heap01.png?raw=true)
-
+<br /><br />
 
 图1-2
 ![avatar](https://github.com/basebase/img_server/blob/master/common/heap02.png?raw=true)
-
+<br /><br />
 
 图1-3
 ![avatar](https://github.com/basebase/img_server/blob/master/common/heap03.png?raw=true)
+<br /><br />
