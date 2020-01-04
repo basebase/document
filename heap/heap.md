@@ -94,3 +94,15 @@ public class MaxHeap<E extends Comparable<E>> {
 
 }
 ```
+
+
+##### 添加元素及上滤
+
+现在我们需要向数组中添加元素, 但是添加进入的元素是否满足堆的特性呢?
+如果不满足我们又要如何去处理呢?
+
+当我们向数组中添加一个元素且不满足堆的特性时候, 我们需要进行一个上滤的过程(有些称为上浮), 用来达到并满足堆的特性。
+
+如下图所示, 向数组中添加一个元素并且进行上滤的过程:
+
+![avatar](https://github.com/basebase/img_server/blob/master/common/heap04.jpg?raw=true)
