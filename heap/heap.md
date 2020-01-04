@@ -57,22 +57,22 @@
 
 public class MaxHeap<E extends Comparable<E>> {
 
-    private ArrayList<E> array;
+    private ArrayList<E> data;
 
     public MaxHeap(int capacity) {
-        this.array = new ArrayList<>(capacity);
+        this.data = new ArrayList<>(capacity);
     }
 
     public MaxHeap() {
-        this.array = new ArrayList<>();
+        this.data = new ArrayList<>();
     }
 
     public int size() {
-        return array.size();
+        return data.size();
     }
 
     public boolean isEmpty() {
-        return array.size() == 0;
+        return data.size() == 0;
     }
 
     // 返回父元素在二叉堆中数组的索引位置
@@ -106,3 +106,36 @@ public class MaxHeap<E extends Comparable<E>> {
 如下图所示, 向数组中添加一个元素并且进行上滤的过程:
 
 ![avatar](https://github.com/basebase/img_server/blob/master/common/heap04.jpg?raw=true)
+
+
+通过上面的图例过程, 我们清楚在插入的时候需要一直和自己父节点进行比较, 直到满足
+堆的特性才算插入成功。
+
+
+
+```java
+// 添加元素
+public void add(E e) {
+    data.add(e);
+    // 将新加入的索引进行上滤, 添加是从最后添加的所以取最后元素索引位置
+    siftUp(data.size() - 1);
+}
+
+// 上滤过程
+private void siftUp(int index) {
+    // 如果当前index为0表示为根节点, 根节点是没有父元素的所以没法比较, 并且父节点是小于子节点的
+    while (index > 0 && data.get(parent(index)).compareTo(data.get(index)) < 0) {
+        // 如果子节点大于父节点进行交换
+        swap(parent(index), index);
+        // 继续判断, 是否还大于祖先节点, 直到满足堆的特性
+        index = parent(index);
+    }
+}
+
+// 位置交换
+private void swap(int p, int c) {
+    E t = data.get(p);
+    data.set(p, data.get(c));
+    data.set(c, t);
+}
+```
