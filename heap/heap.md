@@ -139,3 +139,14 @@ private void swap(int p, int c) {
     data.set(c, t);
 }
 ```
+
+
+
+##### 取出元素及下滤
+
+由于堆是优先队列的结构, 所以只能从堆顶删除元素。移除堆顶元素之后, 用堆的最后一个节点填补取走的堆顶元素, 并将堆的实际元素个数减1。但用最后一个元素取代堆顶元素可能会破坏堆的特性, 因此需要将堆自顶向下进行调整(这个过程一般称为下浮或者下滤)使其满足最大堆或者最小堆。
+
+
+下图是取出元素并进行下滤流程图:
+
+![avatar](https://github.com/basebase/img_server/blob/master/common/heap05.jpg?raw=true)
