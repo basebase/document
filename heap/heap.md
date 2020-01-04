@@ -150,3 +150,64 @@ private void swap(int p, int c) {
 下图是取出元素并进行下滤流程图:
 
 ![avatar](https://github.com/basebase/img_server/blob/master/common/heap05.jpg?raw=true)
+
+
+
+```java
+
+// 查找出最大元素
+public E findMax() {
+    if (data.size() == 0)
+        throw new IllegalArgumentException("当前数组为空");
+    return data.get(0);
+}
+
+// 取出堆中最大元素
+public E extractMax() {
+    // 1. 找到最大值
+    E ret = findMax();
+
+    // 2. 最后一个元素顶替最大值
+    swap(0, data.size() - 1);
+
+    // 3. 删除最后节点值
+    data.remove(data.size() - 1);
+
+    // 4. 下滤(下浮)过程
+    siftDown(0);
+
+    return ret ;
+}
+
+// 下滤节点
+private void siftDown(int index) {
+
+    // 如果下滤到叶子节点, 在去获取当前索引位置左孩子肯定超出整个数组大小
+    while (leftChild(index) < data.size()) {
+
+
+        // 1. 获取到该索引的左右孩子
+        int k = leftChild(index);
+
+        // 需要判断是否存在右孩子
+        // k + 1的话相当左孩子索引位置+1得到了右孩子, 如果不大于数组长度则包含右孩子
+        if (k + 1 < data.size()) {
+
+            // 获取左右孩子中最大的元素节点
+            // 这里的判断是更新索引位置数据, 如果左孩子大于右孩子则不需要更新索引, 否则更新为右孩子的索引
+            if (data.get(k).compareTo(data.get(k + 1)) < 0) {
+//                    k = rightChild(index);
+                ++ k; // ++k 等价rightChild(k)
+            }
+        }
+
+        if (data.get(index).compareTo(data.get(k)) >= 0)
+            break;
+
+        // 进行交换数据
+        swap(index, k);
+        // 将下滤后的索引继续进行判断
+        index = k;
+    }
+}
+```
