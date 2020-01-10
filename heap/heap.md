@@ -225,3 +225,8 @@ private void siftDown(int index) {
 
   如何定位最后一个非叶子节点索引位置呢?  
     取出数组最后一个索引位置, 更具最后一个索引位置计算获取到父节点索引位置。
+
+
+图1-4
+![avatar](https://github.com/basebase/img_server/blob/master/common/heap06.jpg?raw=true)
+<br /><br />
