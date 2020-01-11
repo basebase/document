@@ -215,6 +215,13 @@ private void siftDown(int index) {
 
 ##### Replace和Heapify处理
 
+
+* Replace
+  定义: 取出堆中最大的元素, 然后放入一个新的元素。
+
+  实现原理:
+    1. 可以直接将堆顶元素替换成新的元素, 然后进行下滤(下沉)操作。
+
 * Heapify
 
 定义: 将任意数组转换成堆。
@@ -230,3 +237,46 @@ private void siftDown(int index) {
 图1-4
 ![avatar](https://github.com/basebase/img_server/blob/master/common/heap06.jpg?raw=true)
 <br /><br />
+
+
+
+
+
+
+```java
+
+public E replace(E e) {
+    // 1. 找到最大元素
+    E ret = findMax();
+
+    // 2. 新插入的值替换堆顶元素
+    data.set(0, e);
+
+    // 3. 进行下沉操作
+    siftDown(0);
+
+    return ret;
+}
+
+
+/**
+  Heapify操作, 写成一个构造函数.
+*/
+public MaxHeap(ArrayList<E> data) {
+
+   this.data = data;
+   // 缩写, 直接获取到最后一个非叶子节点索引, 进行递减。
+   for (int i = parent(data.size() - 1); i >= 0; i--) {
+       siftDown(i);
+   }
+
+   // 1. 获取到最后一个非叶子节点的元素索引位置
+//        int p = parent(this.data.size() - 1);
+   // 2. 对p从后往前执行, 依次递减进行下沉操作
+//        while (p >= 0) {
+//            // 2. 进行下沉
+//            siftDown(p);
+//            p--;
+//        }
+}
+```
