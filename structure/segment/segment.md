@@ -230,17 +230,17 @@ private void buildSegmentTree(int treeIndex, int l, int r) {
       return ;
   }
 
-  int leftChildIndex = leftChild(treeIndex);
-  int rightChildIndex = rightChild(treeIndex);
+  int leftTreeIndex = leftChild(treeIndex);
+  int rightTreeIndex = rightChild(treeIndex);
 
   // 如果还能继续划分则需要更新区间数据
   int mid = l + (r - l) / 2;
 
   // 左孩子
-  buildSegmentTree(leftChildIndex, l, mid);
+  buildSegmentTree(leftTreeIndex, l, mid);
 
   // 右孩子
-  buildSegmentTree(rightChildIndex, mid + 1, r);
+  buildSegmentTree(rightTreeIndex, mid + 1, r);
 
   // 如果我们是区间累加就将左右孩子值相加存储即可
   // 然鹅直接累加是不行的, E是不知道滴。
@@ -248,10 +248,7 @@ private void buildSegmentTree(int treeIndex, int l, int r) {
   // 我们创建一个接口, 用来实现我们我们想要的操作。
   // this.tree[treeIndex] = this.tree[leftChildIndex] + this.tree[rightChildIndex];
 
-  this.tree[treeIndex] = merger.merge(this.tree[leftChildIndex], this.tree[rightChildIndex]);
+  this.tree[treeIndex] = merger.merge(this.tree[leftTreeIndex], this.tree[rightTreeIndex]);
 }
-
-
-
 
 ```
