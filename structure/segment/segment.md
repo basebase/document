@@ -12,7 +12,7 @@
 * 基本概念
   + 线段树每个节点表示一个区间
   + 线段树的根节点表示整个区间统计范围, 如[1-N]
-  + 线段树的每个叶子节点表示长度为1的元区间, 如[x, x]
+  + 线段树的每个叶子节点表示长度为1的元区间
   + 线段树的每个节点[l, r], 它的左子节点是[l, mid], 右子节点是[mid + 1, r], 其中 mid = (l + r) / 2
 
 * 特性
@@ -144,7 +144,7 @@ m次操作后, 我们可以在[i...j]区间内看到多少种颜色?
 
 #### 线段树实现
 
-##### 线段树数组表示
+##### [线段树数组表示](#v1)
 ```java
 public class SegmentTree<E> {
 
@@ -180,4 +180,78 @@ public class SegmentTree<E> {
         return index * 2 + 2;
     }
 }
+```
+
+##### 将数组转换线段树
+
+上面我们也说了, 线段树可以做区间的汇总, 查询, 最大最小。那么在构建线段树的时候, 线段树的节点存储的是什么? 叶子节点又存储的是什么?
+
+1. 叶子节点存储的是实际具体的数字值
+2. 非叶子节点存储什么内容主要和我们的业务关联比如我们是累加, 那么非叶子节点存储的就是l...r的总和, 如果是最大值或最小值则是l...r中最大值或者最小值信息。
+
+
+如何划分线段树的区间呢? 文章开头已经说了, 不过会存在一个小问题
+```text
+mid = L + (R - L) / 2
+```
+
+之所以采用这种方法而非(l+r)/2主要是为了防止数太大, 进而出现整形溢出。
+
+现在我们已经清楚的知道如何划分线段树区间, 以及通过[线段树数组表示](#v1)代码获取到其左右孩子信息。
+
+接下来我们就看看如何通过递归的方式构建线段树把。
+
+
+```java
+public interface Merger<E> {
+    E merge(E a, E b) ;
+}
+```
+利用该接口, 可以动态实现线段树最大|最小|聚合操作等。
+
+```java
+
+private Merger<E> merger;
+
+// ++ 这里只有新增出来的部分
+public SegmentTree(E[] arr, Merger<E> merger) {
+  this.merger = merger;
+  // 将数组构建成线段树
+  // 初始化从下标0开始, 区间从0到数组末尾
+  buildSegmentTree(0, 0, this.data.length -1);
+}
+
+// treeIndex的位置创建区间[l...r]的值
+private void buildSegmentTree(int treeIndex, int l, int r) {
+
+  // 如果数组长度只有1的话, 直接赋值退出
+  if (l == r) {
+      this.tree[treeIndex] = this.data[l];
+      return ;
+  }
+
+  int leftChildIndex = leftChild(treeIndex);
+  int rightChildIndex = rightChild(treeIndex);
+
+  // 如果还能继续划分则需要更新区间数据
+  int mid = l + (r - l) / 2;
+
+  // 左孩子
+  buildSegmentTree(leftChildIndex, l, mid);
+
+  // 右孩子
+  buildSegmentTree(rightChildIndex, mid + 1, r);
+
+  // 如果我们是区间累加就将左右孩子值相加存储即可
+  // 然鹅直接累加是不行的, E是不知道滴。
+  // 不过如果直接进行相加了, 那么我们想要做最大|最小或者其它操作岂不是没法用了吗?
+  // 我们创建一个接口, 用来实现我们我们想要的操作。
+  // this.tree[treeIndex] = this.tree[leftChildIndex] + this.tree[rightChildIndex];
+
+  this.tree[treeIndex] = merger.merge(this.tree[leftChildIndex], this.tree[rightChildIndex]);
+}
+
+
+
+
 ```
