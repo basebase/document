@@ -251,6 +251,24 @@ private void buildSegmentTree(int treeIndex, int l, int r) {
   this.tree[treeIndex] = merger.merge(this.tree[leftTreeIndex], this.tree[rightTreeIndex]);
 }
 
+
+@Override
+public String toString() {
+    StringBuffer res = new StringBuffer();
+    res.append('[');
+    for (int i = 0; i < tree.length; i ++) {
+        if (tree[i] != null)
+            res.append(tree[i]);
+        else
+            res.append("null");
+
+        if (i < tree.length - 1)
+            res.append(", ");
+    }
+
+    res.append(']');
+    return res.toString();
+}
 ```
 
 ##### 线段树查询
@@ -288,11 +306,13 @@ private E query(int treeIndex, int l, int r, int queryL, int queryR) {
   int leftTreeIndex = leftChild(treeIndex);
   int rightTreeIndex = rightChild(treeIndex);
 
+  // 要查找的区间在右子树中
   if (queryL >= mid + 1)
       return query(rightTreeIndex, mid + 1, r, queryL, queryR);
-  else if (queryR <= mid)
+  else if (queryR <= mid) // 要查找的区间在左子树中
       return query(leftTreeIndex, l, mid, queryL, queryR);
 
+  // 当要查询的区间, 在左右子树中
   E leftQueryResult = query(leftTreeIndex, l, mid, queryL, mid);
   E rightQueryResult = query(rightTreeIndex, mid + 1, r, mid + 1, queryR);
   return merger.merge(leftQueryResult, rightQueryResult);
