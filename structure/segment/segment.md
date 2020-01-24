@@ -273,7 +273,7 @@ public String toString() {
 
 ##### 线段树查询
 
-回到图[1-3]这个线段树图片中, 如果我们要查找[2, 5]这个区间的的信息。  
+图[1-6]这个线段树图片中, 如果我们要查找[2, 5]这个区间的的信息。  
 如果我们的Merger实现的累加操作, 则就是查询[2, 5]这个区间的总和。  
 
 如何查找呢? 从什么位置上开始查找呢? 当然还是从我们的根节点上开始查找。
@@ -318,3 +318,8 @@ private E query(int treeIndex, int l, int r, int queryL, int queryR) {
   return merger.merge(leftQueryResult, rightQueryResult);
 }
 ```
+
+图[1-6]展示如何递归查找区间值。  
+
+[图1-6]
+![1-6](https://github.com/basebase/img_server/blob/master/common/segment06.jpg?raw=true)
