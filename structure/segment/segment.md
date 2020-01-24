@@ -23,7 +23,6 @@
 * 基本操作
   + 区间更新
   + 区间查询
-  + 扩展(取出区间最大值, 最小值, 区间值总和等)
 
 * 应用场景  
   1. 比如给一组数据, 如: [1, 2, 3, 4], 有两种操作, 操作1: 给第i个数加上x, 操作2: 数组中最大的数是什么?
@@ -323,3 +322,50 @@ private E query(int treeIndex, int l, int r, int queryL, int queryR) {
 
 [图1-6]
 ![1-6](https://github.com/basebase/img_server/blob/master/common/segment06.jpg?raw=true)
+
+
+
+##### 线段树更新
+
+基本操作中, 我们已经学习区间查询, 但是区间如何更新呢?
+更新需要注意哪些点呢?
+
+线段树存储的是一个区间的值, 所以当我们更新叶子节点内容后, 还需要一级一级的往上推, 更新父节点的值。
+
+所以, 更新操作分为两部分:
+  1. 查找到对应的索引并更新为新数据
+  2. 更新数据后, 依次更新父节点的值
+
+
+
+```java
+
+public void set(int index, E e) {
+    if (index < 0 || index >= data.length)
+        throw new IllegalArgumentException("请正确输入索引位置.");
+
+    data[index] = e;
+    // 初始化从根节点开始, 查找到对应的叶子节点更新
+    set(0, 0, data.length - 1, index, e);
+}
+
+private void set(int treeIndex, int l, int r, int index, E e) {
+    if (l == r) {
+        tree[treeIndex] = e;
+        return ;
+    }
+
+    int mid = l + (r - l) / 2;
+    int leftIndexTree = leftChild(treeIndex);
+    int rightIndexTree = rightChild(treeIndex);
+
+    // 如果索引位置大于中间值, 则一定在树的右侧, 否则在树的左侧。
+    if (index >= mid + 1)
+        set(rightIndexTree, mid + 1, r, index, e);
+    else
+        set(leftIndexTree, l, mid, index, e);
+
+    // 最后不要忘记更新父节点的值
+    tree[treeIndex] = merger.merge(tree[leftIndexTree], tree[rightIndexTree]);
+}
+```
