@@ -252,3 +252,49 @@ private void buildSegmentTree(int treeIndex, int l, int r) {
 }
 
 ```
+
+##### 线段树查询
+
+回到图[1-3]这个线段树图片中, 如果我们要查找[2, 5]这个区间的的信息。  
+如果我们的Merger实现的累加操作, 则就是查询[2, 5]这个区间的总和。  
+
+如何查找呢? 从什么位置上开始查找呢? 当然还是从我们的根节点上开始查找。
+  1. 根节点包含的是[0...7]这个区间相应的信息, [2, 5]显然是[0...7]区间的一个子集。相应的要向下从这个根节点的左右子树种查找。对于线段树来说每一个节点他的左右子树都是从中间分隔开的, 所以我们是知道这个分隔的位置的。所以对于根节点来说, 他的左孩子是[0...3]区间的内容, 右孩子是[4...7]区间的内容。
+
+  2. 对于[2, 5]这个区间, 它有一部分落在[0...3]区间中, 另外一部分落在[4...7]区间中。所以我们要到根节点左右两个节点查询。具体是在左节点中查询[2...3]这个子区间, 右节点查找[4...5]这个区间。可以看到我们将[2, 5]拆成了两部分[2...3]和[4...5]两个子区间。分别到根节点左右两个孩子中去查找。
+
+  3. 我们从[0...3]这个区间查询[2, 3]这个子区间。我们知道[0...3]这个区间左孩子是[0...1]区间右孩子是[2...3]的区间, 由于[0...1]这个区间和我们查找的区间没有任何关系, 所以我们继续在[0...3]的右孩子[2, 3]继续查找。同理, 在查询[4...7]这个节点中查找[4, 5]这个区间, 它的左孩子包含[4, 5]这个区间, 右孩子包含[6, 7]这个区间。所以相应的我们要查找的[4, 5]区间和[6, 7]完全没有重叠, 所以到[4...7]的左孩子查找相应的数据就可以了。
+
+  4. 当然, 在查找到[2, 3]这个结果和[4, 5]这个结果的值时, 我们并不需要遍历到叶子节点, 直接返回[2, 3]和[4, 5]的值。但是由于是两个不同节点返回来的, 我们还需要对返回的结果进行组合。返回[2, 5]这个区间所对应的的结果。
+
+  5. 可以看到我们并不需要从头到尾遍历我们要查询[2, 5]的元素。我们只需要从我们根节点向下去找相应的子区间。在把我们查找到的子区间综合起来。查找的时候是和我们树的高度相关。而和我们查询区间的长度是无关的。正因为如此, 我们线段树是logn级别的查找也是logn级别的。
+
+
+```java
+
+public E query(int queryL, int queryR) {
+  if (queryL < 0 || queryL >= data.length ||
+          queryR < 0 || queryR >= data.length || queryL > queryR)
+      throw new IllegalArgumentException("请正确输入区间值");
+
+  return query(0, 0, data.length -1, queryL, queryR);
+}
+
+private E query(int treeIndex, int l, int r, int queryL, int queryR) {
+  if (l == queryL && r == queryR)
+      return tree[treeIndex];
+
+  int mid = l + (r - l) / 2;
+  int leftTreeIndex = leftChild(treeIndex);
+  int rightTreeIndex = rightChild(treeIndex);
+
+  if (queryL >= mid + 1)
+      return query(rightTreeIndex, mid + 1, r, queryL, queryR);
+  else if (queryR <= mid)
+      return query(leftTreeIndex, l, mid, queryL, queryR);
+
+  E leftQueryResult = query(leftTreeIndex, l, mid, queryL, mid);
+  E rightQueryResult = query(rightTreeIndex, mid + 1, r, mid + 1, queryR);
+  return merger.merge(leftQueryResult, rightQueryResult);
+}
+```
