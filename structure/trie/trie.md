@@ -100,3 +100,94 @@ class Node {
   Map<char, Node> next ;
 }
 ```
+
+
+##### 实现Trie
+
+###### 构建Trie
+
+```java
+
+public class Trie {
+/**
+ * 更具上面所述, 构建我们的Node
+ */
+  private class Node {
+    public boolean isWord;
+    public Map<Character, Node> next;
+
+    public Node(boolean isWord) {
+        this.isWord = isWord;
+        this.next = new TreeMap<>();
+    }
+
+    public Node() {
+        this(false);
+    }
+  }
+
+  // 根节点
+  private Node root ;
+  private int size ;
+
+  // 初始化节点信息
+  public Trie() {
+    this.root = new Node();
+    this.size = 0;
+  }
+
+  public int getSize() {
+    return size;
+  }
+}
+```
+
+
+###### 向Trie添加元素
+
+```java
+
+/**
+ * 向Trie中添加一个新的单词word
+ * @param word
+ */
+public void add(String word) {
+    Node cur = root;
+    for (int i = 0 ; i < word.length(); i ++) {
+        char c = word.charAt(i);
+        if (cur.next.get(c) == null) // 如果下一个节点不存在字符就添加, 如果存在不做任何操作
+            cur.next.put(c, new Node());
+
+        cur = cur.next.get(c); // 重新赋值, 这样就到叶子节点但是有可能是某个非叶子节点
+    }
+
+    // 结束之后, 不能直接就size++, 需要判断是否之前就添加过该单词了, 就判断尾巴是否为true
+    if (!cur.isWord) {
+        cur.isWord = true;
+        size ++;
+    }
+}
+
+// 添加元素递归版
+public void addRE(String word) {
+    addRE(word, 0, root);
+}
+
+// 添加元素递归版
+private void addRE(String word, int index, Node node) {
+
+    if (index == word.length()) {
+        if (!node.isWord) {
+            node.isWord = true;
+            size ++;
+        }
+
+        return ;
+    }
+
+    char c = word.charAt(index);
+    if (node.next.get(c) == null)
+        node.next.put(c, new Node());
+    addRE(word, ++index, node.next.get(c));
+}
+```
