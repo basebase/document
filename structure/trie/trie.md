@@ -191,3 +191,42 @@ private void addRE(String word, int index, Node node) {
     addRE(word, ++index, node.next.get(c));
 }
 ```
+
+
+###### 查询单词是否在Trie中
+
+```java
+/**
+ * 查询单词是否在trie中
+ * @param word
+ * @return
+ */
+public boolean contains(String word) {
+    Node cur = root;
+    for (int i = 0 ; i < word.length(); i ++) {
+        char c = word.charAt(i);
+        if (cur.next.get(c) == null) // 如果不存在查找的单词字母, 则直接返回
+            return false;
+
+        cur = cur.next.get(c);
+    }
+
+    // 记住, 这里计算遍历出来后也不能直接返回true, 比如一开说的pan是panda前缀, 如果我们没有添加pan却返回了true就有问题了
+    //        return true;
+    return cur.isWord; // 正确的方式直接返回当前节点的标识
+}
+
+// 查询单词是否在trie中, 递归写法
+public boolean containsRE(String word) {
+    return containsRE(word, 0, root);
+}
+
+private boolean containsRE(String word, int index, Node node) {
+    if (index == word.length()) {
+        return node.isWord;
+    }
+
+    char c = word.charAt(index);
+    return node.next.get(c) == null ? false : containsRE(word, ++index, node.next.get(c));
+}
+```
