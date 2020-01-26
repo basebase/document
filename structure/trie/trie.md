@@ -265,3 +265,35 @@ private boolean isPrefixRE(String prefix, int index, Node node) {
     return node.next.get(c) == null ? false : isPrefixRE(prefix, ++index, node.next.get(c));
 }
 ```
+
+
+##### 扩展Trie
+基本上, 我们上面已经实现了Trie的功能了, 但是我们现在来添加一些扩展, 比如说: 如果输入"."就代表匹配任意字符进行匹配。
+
+那么, 如何处理呢?
+
+
+```java
+
+public boolean match(String word) {
+        return match(word, 0, root);
+    }
+
+private boolean match(String word, int index, Node node) {
+
+    if (index == word.length())
+        return node.isWord;
+
+    char c = word.charAt(index);
+    if (c != '.') {
+        return node.next.get(c) == null ? false : match(word, ++index, node.next.get(c));
+    } else {
+        // 如果是"."需要把所有节点遍历进行匹配
+        for (Character nextChar : node.next.keySet()) {
+            return node.next.get(nextChar) == null ? false : match(word, ++index, node.next.get(nextChar));
+        }
+
+        return false;
+    }
+}
+```
