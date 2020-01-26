@@ -230,3 +230,38 @@ private boolean containsRE(String word, int index, Node node) {
     return node.next.get(c) == null ? false : containsRE(word, ++index, node.next.get(c));
 }
 ```
+
+
+###### 前缀查询
+
+几乎和查询逻辑是一样的, 只不过我们不需要按照isWord返回, 如果我们能顺利退出循环, 就表示我们能查询到该字符串的前缀。
+
+```java
+
+// 查询Trie中有单词以prefix为前缀
+public boolean isPrefix(String prefix) {
+    Node cur = root;
+    for (int i = 0; i < prefix.length(); i ++) {
+        char c = prefix.charAt(i);
+        if (cur.next.get(c) == null)
+            return false;
+
+        cur = cur.next.get(c);
+    }
+
+    return true;
+}
+
+// 查询Trie中有单词以prefix为前缀(递归写法)
+public boolean isPrefixRE(String prefix) {
+    return isPrefixRE(prefix, 0, root);
+}
+
+private boolean isPrefixRE(String prefix, int index, Node node) {
+    if (index == prefix.length()) {
+        return true;
+    }
+    char c = prefix.charAt(index);
+    return node.next.get(c) == null ? false : isPrefixRE(prefix, ++index, node.next.get(c));
+}
+```
