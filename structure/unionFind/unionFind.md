@@ -233,3 +233,183 @@ public class UnionFindV2 implements UF {
     }
 }
 ```
+
+
+
+##### 并查集实现版本V3, 基于size优化
+
+在进行优化之前, 我们先来对之前两个版本union-find进行一个简单测试。
+
+
+```java
+
+public class UnionFindTest {
+
+    private static double testUF(UF uf, int m) {
+
+        int size = uf.getSize();
+        Random random = new Random();
+
+        long startTime = System.nanoTime();
+
+        // m次合并性能测试
+        for (int i = 0; i < m; i ++) {
+            int a = random.nextInt(size);
+            int b = random.nextInt(size);
+            uf.union(a, b);
+        }
+
+        // m次查询性能测试
+        for (int i = 0; i < m; i ++) {
+            int a = random.nextInt(size);
+            int b = random.nextInt(size);
+            uf.find(a, b);
+        }
+
+
+        long endTime = System.nanoTime();
+
+        return (endTime - startTime) / 1000000000.0;
+    }
+
+    public static void main(String[] args) {
+        int size = 10000;
+        int m = 10000;
+
+        UnionFindV1 unionFindV1 = new UnionFindV1(size);
+        System.out.println("UnionFindV1: " + testUF(unionFindV1, m) + " s");
+
+        UnionFindV2 unionFindV2 = new UnionFindV2(size);
+        System.out.println("UnionFindV2: " + testUF(unionFindV2, m) + " s");
+
+    }
+}
+```
+
+```text
+
+当size=10000, m=10000时候, 我的输出如下:
+UnionFindV1: 0.11981561 s
+UnionFindV2: 0.068716989 s
+
+差距并不是很大。由于UnionFindV1合并操作是O(n)级别的, 这个n就是size的值。为了显示它们之间的差距更加明显。尝试修改size的值。
+
+当size = 100000, m=10000时候, 我的输出如下:
+UnionFindV1: 0.502680044 s
+UnionFindV2: 0.005111976 s
+
+这次的运行, 二者之间的差距就显示的非常大了。
+
+但是V2真的就比V1好吗?
+当size=100000, m=100000, 我的输出如下:
+UnionFindV1: 7.837964178 s
+UnionFindV2: 15.23050521 s
+
+可以看到UnionFindV2比UnionFindV1还要慢了。
+由于UnionFindV1整体就是使用一个数组, 我们的合并就是对这个一个连续空间进行循环操作JVM有比较好的优化所以运行速度会比较快, 相应的UnionFindV2查询的过程是一个不断索引的过程, 它不是一个顺序的访问一片连续空间过程。要在不同地址之间进行跳转因此速度会慢一些。第二个原因就是UnionFindV2的find过程是O(h)比我们UnionFindV1要高。
+
+```
+
+好的, 当我们发现V2的版本小于V1的时候, 我们去观察一下union过程中, 更多的元素被组织在一个集合中, 所以我们得到的树是非常大的, 相应的深度也会非常的高。这就使得在后续进行m次find操作它的时间性能消耗也会非常的高。
+
+
+我们在进行union操作的时候, 就直接将p元素的根节点指向q元素的根节点。
+我们没有充分考虑p和q这两个元素, 所在的树的特点是如何的。
+
+那么在优化UnionFindV2之前, 我们先来看看下面这张图。
+
+
+![1-5](https://github.com/basebase/img_server/blob/master/common/unionfind05.jpg?raw=true)
+
+通过上图, 我们发现, 现在的并查集在实现union过程中并没有去判断两个元素树结构进行判断, 很多时候这个合并过程会不断增加树的高度。甚至在某些极端的情况下我们得到的是一个链表形状。具体如何解决呢? 一个简单解决方案就是考虑"size", 当前这棵树有多少个节点。简单来说就是"让节点个数小的树它的根节点去指向节点个数多的那棵树的根节点。"这样处理之后, 高概率它的深度会比较低。
+
+
+
+```java
+
+public class UnionFindV3 implements UF {
+
+    private int[] parent;
+    private int[] sz; // 记录树的节点个数, sz[i]表示以i为根节点的集合中元素个数
+
+
+    public UnionFindV3(int size) {
+        parent = new int[size];
+        sz = new int[size];
+
+        // 初始化, 相互之间没有共同集合, 大家都指向自己
+        for (int i = 0 ; i < parent.length; i++) {
+            parent[i] = i;
+            sz[i] = 1; // 初始化, 每棵树的高度都为1
+        }
+
+    }
+
+    @Override
+    public int getSize() {
+        return parent.length;
+    }
+
+    @Override
+    public boolean find(int p, int q) {
+        return find(p) == find(q);
+    }
+
+    /***
+     * 查找过程, 查找元素p所对应的集合编号
+     * O(h)复杂度, 其中h为树的高度。
+     * @param p
+     * @return
+     */
+    private int find(int p) {
+
+        if (p < 0 || p >= parent.length)
+            throw new IllegalArgumentException("Error");
+
+        while (p != parent[p]) { // 当p和parent[p]相等也就是指向自己, 即根节点
+            p = parent[p];
+        }
+
+        return p;
+    }
+
+    @Override
+    public void union(int p, int q) {
+        int pRoot = find(p);
+        int qRoot = find(q);
+
+
+
+        // 让p的根节点指向q的根节点
+        if (pRoot != qRoot) {
+
+            // 判断两个树的元素个数, 让元素个数小的根节点指向元素个数多的根节点。
+            // 根据两个元素所在树的元素个数不同判断合并方向
+            // 将元素个数少的集合合并到元素个数多的集合上
+
+            if (sz[pRoot] < sz[qRoot]) {
+                parent[pRoot] = qRoot;
+                sz[qRoot] += sz[pRoot]; // 维护sz数组的值, 我们让qRoot值加上pRoot的值, 因为它们已经合并了。
+            } else {
+                parent[qRoot] = pRoot;
+                sz[pRoot] += sz[qRoot];
+            }
+
+        }
+
+
+
+    }
+}
+```
+
+现在, 我们把UnionFindV3加入进行测试, 我这边输出如下时间:
+
+```text
+UnionFindV1: 7.297955247 s
+UnionFindV2: 14.029683212 s
+UnionFindV3: 0.030103227 s
+
+可以发现, 我们UnionFindV3加入size的优化后, 效率就提升很多了。
+加入size后, 我们并查集保证树的深度是非常浅的。
+```
