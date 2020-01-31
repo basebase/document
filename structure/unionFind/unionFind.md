@@ -513,3 +513,129 @@ size = 10000000, m = 10000000
 UnionFindV3: 7.95442212 s
 UnionFindV4: 6.952561368 s
 ```
+
+
+
+##### 并查集优化之路径压缩
+
+路径压缩解决了一个什么问题? 我们先来看看下面这张图。  
+这三幅图均表示这5个节点是相互连接的, 但是经过上面的学习我们了解到树的深度不同效率也是不同的。
+
+很显然, 最左边的树高度达到了5, 如果执行find(4)这个操作, 它的时间效率会相对较慢。
+而最右边的树高度只有2, 所以相应的在这棵树中find()任意一个节点它的时间性能就比较高。<strong>在我们之前学习过的并查集Union操作中, 让节点低的树指向节点高的树, 这个过程难免会增加树的高度。路径压缩解决的问题就是让一颗高的树压缩成为一个比较矮的树。</strong>
+
+这里注意一下, 并查集中子树的个数是没有限制的。所以最理想的情况下都形成下图最右边的形状。只有2层, 根节点在第1层, 其它节点在下面一层。
+
+![1-7](https://github.com/basebase/img_server/blob/master/common/unionfind07.png?raw=true)
+
+
+###### 路径压缩发生过程
+
+路径压缩发生在什么时候呢? 什么时候进行压缩?  
+这里我们主要在进行find的时候压缩。
+
+也就是我们在查找一个节点对应的根节点是谁这个过程中, 这个过程我们要不断向上直到找到根节点, 在这个查找过程中, 顺便让这颗树的深度降低。即路径压缩过程。
+
+那么路径压缩这个过程是怎么实现的呢？
+
+查看下图
+
+![1-8](https://github.com/basebase/img_server/blob/master/common/unionfind08.jpg?raw=true)
+
+在我们查找的过程中, 我们需要执行一段话
+```java
+parent[p] = parent[parent[p]]
+```
+
+可能看着比较绕, 其实很简单。其实就是将p这个节点的父节点从新指向p的父节点的父节点。
+比如说节点4来举例, 它的父节点是3通过parent[p]得到, 然后在进行parent[3]得到父节点2, 所以4这个节点重新指向节点2。得到新的父节点2后, 就从2这个节点开始继续往上查找。可以看到我们树的深度就降低了。
+
+
+
+```java
+public class UnionFindV5 implements UF {
+
+    private int[] parent;
+    private int[] rank; // rank[i]表示以i为根的集合所展示的树的深度
+
+
+    public UnionFindV5(int size) {
+        parent = new int[size];
+        rank = new int[size];
+
+        // 初始化, 相互之间没有共同集合, 大家都指向自己
+        for (int i = 0 ; i < parent.length; i++) {
+            parent[i] = i;
+            rank[i] = 1; // 初始化, 每棵树的高度都为1
+        }
+
+    }
+
+    @Override
+    public int getSize() {
+        return parent.length;
+    }
+
+    @Override
+    public boolean find(int p, int q) {
+        return find(p) == find(q);
+    }
+
+    /***
+     * 查找过程, 查找元素p所对应的集合编号
+     * O(h)复杂度, 其中h为树的高度。
+     * @param p
+     * @return
+     */
+    private int find(int p) {
+
+        if (p < 0 || p >= parent.length)
+            throw new IllegalArgumentException("Error");
+
+        while (p != parent[p]) { // 当p和parent[p]相等也就是指向自己, 即根节点
+
+            /***
+             * 路径压缩...
+             *   注意:
+             *     在rank的时候, 当我们树发生了改变就会从新维护rank值, 而路径压缩却没有维护rank值? 这是必须的吗？
+             *     在路径压缩时候可以不用维护rank, 这也就是为什么称这个数组为rank而不是深度或者depath或者height的原因
+             *     在添加路径压缩后, 就不代表这个树的高度, 只表示一个排名
+             *
+             *     当然在添加路径压缩rank还是原来的逻辑, 只不过可能会出现相同深度的树但是rank值不同。
+             *     所以rank只是在合并的时候进行的一个参考值。
+             */
+            parent[p] = parent[parent[p]];
+            p = parent[p];
+        }
+
+        return p;
+    }
+
+    @Override
+    public void union(int p, int q) {
+        int pRoot = find(p);
+        int qRoot = find(q);
+
+        if (pRoot != qRoot) {
+
+            /***
+             * 根据两个元素所在树的rank不同判断合并方向
+             * 将rank低的树合并到rank高的树上
+             *
+             *   注意:
+             *     当一棵树比另外一颗树的深度更大的话, 就不需要维护树的深度,
+             *     比如A的深度是4, B的深度是3, B挂载到A上面, B的深度最多和A的子树深度一样大
+             */
+
+            if (rank[pRoot] < rank[qRoot]) {
+                parent[pRoot] = qRoot;
+            } else if (rank[qRoot] < rank[pRoot]) {
+                parent[qRoot] = pRoot;
+            } else {
+                parent[qRoot] = pRoot;
+                rank[pRoot] += 1; // 如果两棵树的深度相等, 在进行指向之后, 肯定会多一个节点出来的。
+            }
+        }
+    }
+}
+```
