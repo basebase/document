@@ -339,3 +339,72 @@ public class AVLTree<K extends Comparable<K>, V> {
     }
 }
 ```
+
+
+##### 检查二分搜索树性质和平衡性
+
+在介绍AVL树是如何维持自平衡之前, 我们在做一个辅助工作。辅助方法很简单
+  * 判断当前树是否为一颗二分搜索树
+  * 判断当前树是否为平衡二叉树
+
+对于我们的AVL树来说, 它是对我们的二分搜索树的一个改进。改进的是二分搜索树有可能退化成的链表这种情况。因此引入平衡因子这个概念。AVL同时也是一个二分搜索树。所以也要满足二分搜索树的性质。
+
+<strong>在后续为AVL树添加自平衡机制时, 如果代码有bug, 就很有可能破坏这个性质, 所以设置一个方法用来判断当前AVL树是否还是一颗二分搜索树。</strong>
+
+
+判断二叉树是否为二分搜索树
+```java
+
+/**
+ * 判断该二叉树是否是一颗二分搜索树
+ * @return
+ */
+public boolean isBST() {
+    if (root == null)
+        return true;
+
+    /***
+     * 在介绍二分搜索树的时候, 我们介绍过一个特性, 如果是一颗二分搜索树在进行中序遍历它是升序的
+     */
+    ArrayList<K> keys = new ArrayList<K>();
+    inOrder(root, keys);
+
+    for (int i = 1; i < keys.size(); i ++) {
+        if (keys.get(i - 1).compareTo(keys.get(i)) > 0) // 如果不是升序的情况则是不是一颗二分搜索树。
+            return false;
+    }
+
+    return true;
+}
+
+private void inOrder(Node node, ArrayList<K> keys) {
+    if (node == null)
+        return ;
+
+    inOrder(node.left, keys);
+    keys.add(node.key);
+    inOrder(node.right, keys);
+}
+```
+
+判断二叉树是否为平衡二叉树
+```java
+/***
+ * 判断该二叉树是否是一颗平衡二叉树。
+ * @return
+ */
+public boolean isBalanced() {
+    return isBalanced(root);
+}
+
+private boolean isBalanced(Node node) {
+    if (node == null)
+        return true; // 如果这棵树都为空, 肯定的是一个平衡的 /狗头
+
+    int balanced = getBalanceFactor(node);
+    if (Math.abs(balanced) > 1)
+        return false;
+
+    return isBalanced(node.left) && isBalanced(node.right); // 左子树和右子树平衡因子都必须在范围1内才是一颗平衡二叉树
+}
+```
