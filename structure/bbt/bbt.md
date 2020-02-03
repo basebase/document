@@ -56,7 +56,7 @@
 因为这棵树现在看是向左偏斜的。相应的也要填补这棵树右侧空间的节点。才能继续让这颗树维持平衡二叉树左右子树高度差不超过1这个性质。
 
 
-###### 节点高度&平衡因子
+##### 节点高度&平衡因子
 
 在具体开发中, 由于要跟踪每一个节点对应的高度是多少, 只有这样才方便我们判断, 当前的二叉树是否是平衡的。所以对之前实现的二分搜索树来说, 要实现平衡二叉树我们只要对每一个节点标注节点高度。这个记录非常的简单。
 
@@ -101,3 +101,241 @@
 
 [图1-4 [计算二叉树的高度和平衡因子]]
 ![1-4](https://github.com/basebase/img_server/blob/master/common/bbt04.png?raw=true)
+
+
+###### 树高度与平衡因子代码实现
+
+我们要实现的平衡树底层还是利用我们之前学习的二分搜索树, 可以沿用之前的代码实现, 所以建议在学习完二分搜索树之后再来阅读本篇。当然如果你已经会了二分搜索树也没关系, 我还是会提供一份完全代码的清单, 哈哈哈~
+
+这里我们只需要关注两个点
+  * 节点高度
+  * 节点平衡因子
+
+我们在Node类中新增加一个变量"height"来代表当前节点的高度。在构建每一个节点的时候
+我们初始化高度都为1, 按照二分搜索树添加的特性, 肯定会一路找下去, 最后肯定是一个叶子节点。
+
+我们添加了两个私有方法, 一个获取高度, 一个计算平衡因子。
+
+那么, 我们在什么时候维护树的高度以及计算平衡因子呢?
+当前, 我们在添加节点的时候, 就会计算当前节点的高度以及平衡因子。
+
+```java
+
+
+public class AVLTree<K extends Comparable<K>, V> {
+
+    private class Node{
+        public K key;
+        public V value;
+        public Node left, right;
+
+        // 树的高度
+        public int height;
+
+        public Node(K key, V value){
+            this.key = key;
+            this.value = value;
+            left = null;
+            right = null;
+
+            /**
+             *  添加元素的时候, 肯定是一个叶子节点, 所以创建默认的高度就是1
+             */
+            this.height = 1;
+        }
+    }
+
+    private Node root;
+    private int size;
+
+    public AVLTree(){
+        root = null;
+        size = 0;
+    }
+
+    public int getSize(){
+        return size;
+    }
+
+    public boolean isEmpty(){
+        return size == 0;
+    }
+
+
+    /***
+     * 获取节点node的高度
+     * @param node
+     * @return
+     */
+    private int getHeight(Node node) {
+        if (node == null)
+            return 0;
+        return node.height;
+    }
+
+    /***
+     * 计算节点node平衡因子
+     * @param node
+     * @return
+     */
+    private int getBalanceFactor(Node node) {
+        if (node == null)
+            return 0;
+
+        /***
+         * 平衡因子计算方法:
+         *   当前节点左子树高度 - 当前节点右子树高度
+         */
+        return getHeight(node.left) - getHeight(node.right);
+    }
+
+    // 向二分搜索树中添加新的元素(key, value)
+    public void add(K key, V value){
+        root = add(root, key, value);
+    }
+
+    // 向以node为根的二分搜索树中插入元素(key, value)，递归算法
+    // 返回插入新节点后二分搜索树的根
+    private Node add(Node node, K key, V value){
+
+        if(node == null){
+            size ++;
+            return new Node(key, value); // 遍历到最后一个节点返回, 默认高度为1
+        }
+
+        if(key.compareTo(node.key) < 0)
+            node.left = add(node.left, key, value);
+        else if(key.compareTo(node.key) > 0)
+            node.right = add(node.right, key, value);
+        else // key.compareTo(node.key) == 0
+            node.value = value;
+
+        /***
+         *  在添加元素的时候, 我们需要维护一下树的高度。
+         *  如何计算高度呢?
+         *    当前节点 + Max(左子树高度, 右子树高度)
+         */
+        node.height = 1 + Math.max(getHeight(node.left), getHeight(node.right));
+
+        /***
+         *  有了高度之后, 我们很轻易的获取到平衡因子
+         */
+        int balanceFactor = getBalanceFactor(node);
+
+        // 如果平衡因子大于1, 则破坏了这颗树的平衡性...
+        // 这里暂时先不处理, 先输出一段话即可。
+        if (Math.abs(balanceFactor) > 1)
+            System.out.println("unbalanced : " + balanceFactor);
+
+
+
+        return node;
+    }
+
+    // 返回以node为根节点的二分搜索树中，key所在的节点
+    private Node getNode(Node node, K key){
+
+        if(node == null)
+            return null;
+
+        if(key.equals(node.key))
+            return node;
+        else if(key.compareTo(node.key) < 0)
+            return getNode(node.left, key);
+        else // if(key.compareTo(node.key) > 0)
+            return getNode(node.right, key);
+    }
+
+    public boolean contains(K key){
+        return getNode(root, key) != null;
+    }
+
+    public V get(K key){
+        Node node = getNode(root, key);
+        return node == null ? null : node.value;
+    }
+
+    public void set(K key, V newValue){
+        Node node = getNode(root, key);
+        if(node == null)
+            throw new IllegalArgumentException(key + " doesn't exist!");
+        node.value = newValue;
+    }
+
+    // 返回以node为根的二分搜索树的最小值所在的节点
+    private Node minimum(Node node){
+        if(node.left == null)
+            return node;
+        return minimum(node.left);
+    }
+
+    // 删除掉以node为根的二分搜索树中的最小节点
+    // 返回删除节点后新的二分搜索树的根
+    private Node removeMin(Node node){
+
+        if(node.left == null){
+            Node rightNode = node.right;
+            node.right = null;
+            size --;
+            return rightNode;
+        }
+
+        node.left = removeMin(node.left);
+        return node;
+    }
+
+    // 从二分搜索树中删除键为key的节点
+    public V remove(K key){
+
+        Node node = getNode(root, key);
+        if(node != null){
+            root = remove(root, key);
+            return node.value;
+        }
+        return null;
+    }
+
+    private Node remove(Node node, K key){
+
+        if( node == null )
+            return null;
+
+        if( key.compareTo(node.key) < 0 ){
+            node.left = remove(node.left , key);
+            return node;
+        } else if(key.compareTo(node.key) > 0 ){
+            node.right = remove(node.right, key);
+            return node;
+        } else{   // key.compareTo(node.key) == 0
+
+            // 待删除节点左子树为空的情况
+            if(node.left == null){
+                Node rightNode = node.right;
+                node.right = null;
+                size --;
+                return rightNode;
+            }
+
+            // 待删除节点右子树为空的情况
+            if(node.right == null){
+                Node leftNode = node.left;
+                node.left = null;
+                size --;
+                return leftNode;
+            }
+
+            // 待删除节点左右子树均不为空的情况
+
+            // 找到比待删除节点大的最小节点, 即待删除节点右子树的最小节点
+            // 用这个节点顶替待删除节点的位置
+            Node successor = minimum(node.right);
+            successor.right = removeMin(node.right);
+            successor.left = node.left;
+
+            node.left = node.right = null;
+
+            return successor;
+        }
+    }
+}
+```
