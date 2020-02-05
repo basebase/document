@@ -497,3 +497,55 @@ AVL是如何实现自平衡的, 在这里主要有两个操作, "左旋转和右
 ```
 [图2-3-1]
 ![2-3-1](https://github.com/basebase/img_server/blob/master/common/bbt08.png?raw=true)
+
+
+
+至此, 希望到这里大家能清楚的明白右旋转是如何操作的。下面我们开始我们实际编写右旋转的代码。
+
+###### 右旋转实现
+
+```java
+/****
+ *
+ *                 y                                                 x
+ *               /  \                                              /   \
+ *              x    T4           向右旋转(y)                      z     y
+ *             / \             -------------->                  / \    / \
+ *            z   T3                                           T1 T2  T3 T4
+ *           / \
+ *          T1 T2
+ *
+ * @param y
+ * @return
+ */
+ private Node rightRotate(Node y) {
+     /***
+      *  根据上面的图例, 我们进行右旋转
+      */
+
+     // 1. 首先获取X节点
+     Node x = y.left;
+
+     // 2. 获取X节点的右子树
+     Node t3 = x.right;
+
+     // 3. 更新X节点的右子树, 把Y节点挂载上
+     x.right = y;
+
+     // 4. 更新Y节点的左子树, 将X之前的右节点数据挂载上去
+     y.left = t3;
+
+
+     /***
+      *  注意:
+      *    不要忘记更新树的高度, 当我们旋转后, 树的高度就会降低。
+      *    更新的顺序是先更新Y节点的值, 在更新X节点的值, 这是因为X节点的高度值是会和新的Y节点的高度值相关的:
+      *      1. 先更新Y节点的高度
+      *      2. 在更新X节点的高度
+      */
+     y.height = Math.max(getHeight(y.left), getHeight(y.right)) + 1;
+     x.height = Math.max(getHeight(x.left), getHeight(x.right)) + 1;
+
+     return x;
+ }
+```
