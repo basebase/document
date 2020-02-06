@@ -622,3 +622,119 @@ private Node leftRotate(Node y) {
 
 }
 ```
+
+
+##### LR和RL
+
+经过上面的学习, 当我们插入一个节点, 插入的这个节点就可能会引发这个节点的祖先节点的不平衡。
+
+**如果我们插入的这个节点, 在我们这个不平衡节点的左侧的左侧时, 处理的方法是向右旋转。相对应的是在不平衡节点的右侧的右侧时, 处理的方法就是向左旋转。**
+
+但是, 我们考虑下图这种情况:
+**插入的元素在不平衡节点的左侧的右侧**
+
+![4-1](https://github.com/basebase/img_server/blob/master/common/bbt12.png?raw=true)
+
+例如左图中我们添加节点10, 右图中我们添加节点4的话。此时, 在插入这个节点之后, 向上去寻找祖先节点依然是对于左图中的节点12和右图中的节点8开始, 产生了不平衡。
+
+此时, 我们处理的方式就不能单纯的只是右旋转或者左旋转了。
+
+那么我们以左图为例, 如果插入的节点是10, 如果我们只是简单的向右旋转的话, 我们让节点8作为根节点的话是不可以的。这是因为节点10和节点12都比节点8要大。所以, 这种情况下不能单纯的只是进行一次右旋转。相应的, 左旋转也是同理的。
+
+这种情况下, 我们就应该使用其它的处理方式。
+
+
+图[4-2 [LR情况]]
+![4-2](https://github.com/basebase/img_server/blob/master/common/bbt10.png?raw=true)
+
+问:这种情况我们称为(LR), 什么意思呢？  
+答: 就是我们新插入一个节点, 对于这个节点向上去寻找, 寻找到第一个不平衡节点Y, 新插入的节点是在Y这个节点的左孩子的右侧(一左一右),所以叫做LR。
+
+对于LR这种情况, 具体如何处理呢?
+ 1. 首先对X节点进行左旋转, [这里注意: 之前我们无论是左旋转还是右旋转, 虽然有X,Y,Z三个节点, 但其实我们节点Z是一直没有动过的, 所以我们左右旋转最终只有改变两个节点的值, 那么在这里以X为根的树, 我们就要对X进行左旋转, 就会改变X,Z两个节点值。使得树就会形成箭头后的值。]
+
+ 2. 当我们的树形成LL后, 我们只需要对节点Y进行右旋转即可。
+
+
+
+和LR与之对应的就是RL,如下图:
+
+[RL情况]
+![4-3](https://github.com/basebase/img_server/blob/master/common/bbt11.png?raw=true)
+
+那么, 所谓的RL就是, 我们添加的一个节点后, 从添加节点位置向上回溯, 找到第一个不平衡的点, 那么, 对于这个不平衡的点来说, 我们新添加的节点是在不平衡节点的右子树的左侧(先右后左)。这种情况就叫做RL。
+
+对于RL处理的方式和我们处理LR的方式, 是完全对称的, 所谓的完全对称就是在此时
+首先对X进行右旋转, 右旋转之后就会形成箭头后的值, 也就是形成RR的情况,
+我们按照RR的情况向左旋转, 也就是以节点Y为根的树进行左旋转。
+
+
+以上, 我们就介绍完当我们向二分搜索中添加一个节点, 节点向上回溯, 找到第一个不平衡的节点, 对于这个不平衡的节点来说, 相应的不平衡的情况只有可能是这四种情况, 即LL,RR,LR,RL。
+
+
+##### LR和RL的代码实现
+
+```java
+
+private Node add(Node node, K key, V value){
+
+   if(node == null){
+       size ++;
+       return new Node(key, value); // 遍历到最后一个节点返回, 默认高度为1
+   }
+
+   if(key.compareTo(node.key) < 0)
+       node.left = add(node.left, key, value);
+   else if(key.compareTo(node.key) > 0)
+       node.right = add(node.right, key, value);
+   else // key.compareTo(node.key) == 0
+       node.value = value;
+
+   /***
+    *  在添加元素的时候, 我们需要维护一下树的高度。
+    *  如何计算高度呢?
+    *    当前节点 + Max(左子树高度, 右子树高度)
+    */
+   node.height = 1 + Math.max(getHeight(node.left), getHeight(node.right));
+
+   /***
+    *  有了高度之后, 我们很轻易的获取到平衡因子
+    */
+   int balanceFactor = getBalanceFactor(node);
+
+   // 如果平衡因子大于1, 则破坏了这颗树的平衡性...
+   // 这里暂时先不处理, 先输出一段话即可。
+   if (Math.abs(balanceFactor) > 1)
+       System.out.println("unbalanced : " + balanceFactor);
+
+
+   /***
+    *
+    * 维护平衡
+    *   之所以在这里维护平衡是, 节点的元素添加完成了, 也一级一级的向父节点回溯中, 并得到相应的高度和平衡因子。
+    *   因此可以很方便的知道当前以该节点为根的树是否保持平衡性。
+    */
+
+   // 如果需要右旋转的情况(LL)
+   if (balanceFactor > 1 && getBalanceFactor(node.left) >= 0)
+       return rightRotate(node);   // 将旋转过后的平衡树返回回去, 这样父节点就又是一颗平衡二叉树了
+
+   // 如果需要左旋转的情况(RR)
+   if (balanceFactor < -1 && getBalanceFactor(node.right) <= 0)
+       return leftRotate(node);
+
+   // 先向左旋转, 在向右旋转的情况(LR)
+   if (balanceFactor > 1 && getBalanceFactor(node.left) < 0) {
+       node.left = leftRotate(node.left);
+       return rightRotate(node);
+   }
+
+   // 先向右旋转, 在向左旋转的情况(RL)
+   if (balanceFactor < -1 && getBalanceFactor(node.right) > 0) {
+       node.right = rightRotate(node.right);
+       return leftRotate(node);
+   }
+
+   return node;
+}
+```
