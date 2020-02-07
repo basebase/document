@@ -678,63 +678,189 @@ private Node leftRotate(Node y) {
 
 private Node add(Node node, K key, V value){
 
-   if(node == null){
-       size ++;
-       return new Node(key, value); // 遍历到最后一个节点返回, 默认高度为1
-   }
+if(node == null){
+   size ++;
+   return new Node(key, value); // 遍历到最后一个节点返回, 默认高度为1
+}
 
-   if(key.compareTo(node.key) < 0)
-       node.left = add(node.left, key, value);
-   else if(key.compareTo(node.key) > 0)
-       node.right = add(node.right, key, value);
-   else // key.compareTo(node.key) == 0
-       node.value = value;
+if(key.compareTo(node.key) < 0)
+   node.left = add(node.left, key, value);
+else if(key.compareTo(node.key) > 0)
+   node.right = add(node.right, key, value);
+else // key.compareTo(node.key) == 0
+   node.value = value;
 
-   /***
-    *  在添加元素的时候, 我们需要维护一下树的高度。
-    *  如何计算高度呢?
-    *    当前节点 + Max(左子树高度, 右子树高度)
-    */
-   node.height = 1 + Math.max(getHeight(node.left), getHeight(node.right));
+/***
+*  在添加元素的时候, 我们需要维护一下树的高度。
+*  如何计算高度呢?
+*    当前节点 + Max(左子树高度, 右子树高度)
+*/
+node.height = 1 + Math.max(getHeight(node.left), getHeight(node.right));
 
-   /***
-    *  有了高度之后, 我们很轻易的获取到平衡因子
-    */
-   int balanceFactor = getBalanceFactor(node);
+/***
+*  有了高度之后, 我们很轻易的获取到平衡因子
+*/
+int balanceFactor = getBalanceFactor(node);
 
-   // 如果平衡因子大于1, 则破坏了这颗树的平衡性...
-   // 这里暂时先不处理, 先输出一段话即可。
-   if (Math.abs(balanceFactor) > 1)
-       System.out.println("unbalanced : " + balanceFactor);
+// 如果平衡因子大于1, 则破坏了这颗树的平衡性...
+// 这里暂时先不处理, 先输出一段话即可。
+if (Math.abs(balanceFactor) > 1)
+   System.out.println("unbalanced : " + balanceFactor);
 
 
-   /***
-    *
-    * 维护平衡
-    *   之所以在这里维护平衡是, 节点的元素添加完成了, 也一级一级的向父节点回溯中, 并得到相应的高度和平衡因子。
-    *   因此可以很方便的知道当前以该节点为根的树是否保持平衡性。
-    */
+/***
+*
+* 维护平衡
+*   之所以在这里维护平衡是, 节点的元素添加完成了, 也一级一级的向父节点回溯中, 并得到相应的高度和平衡因子。
+*   因此可以很方便的知道当前以该节点为根的树是否保持平衡性。
+*/
 
-   // 如果需要右旋转的情况(LL)
-   if (balanceFactor > 1 && getBalanceFactor(node.left) >= 0)
-       return rightRotate(node);   // 将旋转过后的平衡树返回回去, 这样父节点就又是一颗平衡二叉树了
+// 如果需要右旋转的情况(LL)
+if (balanceFactor > 1 && getBalanceFactor(node.left) >= 0)
+   return rightRotate(node);   // 将旋转过后的平衡树返回回去, 这样父节点就又是一颗平衡二叉树了
 
-   // 如果需要左旋转的情况(RR)
-   if (balanceFactor < -1 && getBalanceFactor(node.right) <= 0)
-       return leftRotate(node);
+// 如果需要左旋转的情况(RR)
+if (balanceFactor < -1 && getBalanceFactor(node.right) <= 0)
+   return leftRotate(node);
 
-   // 先向左旋转, 在向右旋转的情况(LR)
-   if (balanceFactor > 1 && getBalanceFactor(node.left) < 0) {
-       node.left = leftRotate(node.left);
-       return rightRotate(node);
-   }
+// 先向左旋转, 在向右旋转的情况(LR)
+if (balanceFactor > 1 && getBalanceFactor(node.left) < 0) {
+   node.left = leftRotate(node.left);
+   return rightRotate(node);
+}
 
-   // 先向右旋转, 在向左旋转的情况(RL)
-   if (balanceFactor < -1 && getBalanceFactor(node.right) > 0) {
-       node.right = rightRotate(node.right);
-       return leftRotate(node);
-   }
+// 先向右旋转, 在向左旋转的情况(RL)
+if (balanceFactor < -1 && getBalanceFactor(node.right) > 0) {
+   node.right = rightRotate(node.right);
+   return leftRotate(node);
+}
 
-   return node;
+return node;
 }
 ```
+
+
+##### 删除元素
+与之对应的, 当我们删除一个节点的时候, 树的高度也会随之改变, 这个时候, 我们也需要
+维护二叉树的平衡。这里如何维护平衡呢? 当然和我们做添加的时候是一摸一样的。
+
+由于上面已经长篇大论的介绍了如何处理四种情况, 这里我就直接上代码了, 当然还是会有注释的。
+
+
+```java
+
+private Node remove(Node node, K key){
+
+    if( node == null )
+        return null;
+
+    /***
+     * 这里, 使用一个变量接住删除后的Node信息, 这样, 如果当前二分搜索树的平衡性被破坏, 我们可以进行平衡。
+     */
+    Node retNode = null;
+
+    if( key.compareTo(node.key) < 0 ){
+        node.left = remove(node.left , key);
+//            return node;
+        retNode = node;
+    } else if(key.compareTo(node.key) > 0 ){
+        node.right = remove(node.right, key);
+//            return node;
+        retNode = node;
+    } else{   // key.compareTo(node.key) == 0
+
+        // 待删除节点左子树为空的情况
+        if(node.left == null){
+            Node rightNode = node.right;
+            node.right = null;
+            size --;
+//                return rightNode;
+            retNode = rightNode;
+        }
+
+        // 待删除节点右子树为空的情况
+        /***
+         * 这里, 还需要注意一点, 之前我们是return返回数据, 所以我们写成if没问题, 现在我们使用变量来接收,
+         * 下面的过程都会执行一遍, 但我们的条件是互斥的, 所以需要写成else if ...了
+         *
+          */
+        else if(node.right == null){
+            Node leftNode = node.left;
+            node.left = null;
+            size --;
+//                return leftNode;
+            retNode = leftNode;
+        } else {
+
+            // 待删除节点左右子树均不为空的情况
+
+            // 找到比待删除节点大的最小节点, 即待删除节点右子树的最小节点
+            // 用这个节点顶替待删除节点的位置
+            Node successor = minimum(node.right);
+
+            /***
+             * successor.right = removeMin(node.right);
+             *   这里有个小bug需要注意一下, 由于我们并没有维护removeMin方法中二分搜索树的平衡
+             *   所以, 很有可能会破坏整棵树的平衡性。
+             *
+             *   这里有两个解决方法:
+             *     1. 在removeMin()方法中维护二分搜索树的平衡性。
+             *     2. 我们在remove()方法中已经添加了整棵树的自平衡,
+             *        这句话已经求出Node右子树的最小值: Node successor = minimum(node.right);
+             *        而removeMin(node.right);要做的事情就是在Node的右子树中将这个最小值删除, 而
+             *        我们的remove()方法就是删除以Node为根节点相应的某一个K对应的节点。
+             *        所以successor中已经存储右子树的最小值了, 使用可以写成remove(node.right, successor.key)
+             */
+//            successor.right = removeMin(node.right);
+            // +++
+            successor.right = remove(node.right, successor.key);
+            successor.left = node.left;
+
+            node.left = node.right = null;
+
+//            return successor;
+
+            retNode = successor;
+
+        }
+    }
+
+    // 由于是删除节点, 有可能retNode会获得空节点, 需要判断一下
+    if (retNode == null)
+        return null;
+
+
+    /***
+     *  在最后, 维护二分搜索树的平衡性
+     */
+    retNode.height = 1 + Math.max(getHeight(retNode.left), getHeight(retNode.right));
+    int balanceFactor = getBalanceFactor(retNode);
+
+    // 如果需要右旋转的情况(LL)
+    if (balanceFactor > 1 && getBalanceFactor(retNode.left) >= 0)
+        return rightRotate(retNode);
+
+    // 如果需要左旋转的情况(RR)
+    if (balanceFactor < -1 && getBalanceFactor(retNode.right) <= 0)
+        return leftRotate(retNode);
+
+    // 先向左旋转, 在向右旋转的情况(LR)
+    if (balanceFactor > 1 && getBalanceFactor(retNode.left) < 0) {
+        retNode.left = leftRotate(retNode.left);
+        return rightRotate(retNode);
+    }
+
+    // 先向右旋转, 在向左旋转的情况(RL)
+    if (balanceFactor < -1 && getBalanceFactor(retNode.right) > 0) {
+        retNode.right = rightRotate(retNode.right);
+        return leftRotate(retNode);
+    }
+
+    return retNode; // 将维护后的树返回回去
+
+}
+```
+
+
+##### 结尾
+那么, 基本上我们的平衡二叉树也就介绍完了。文章内容有点多, 希望大家多看几遍。
