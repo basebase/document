@@ -34,13 +34,13 @@ out: 1, 2, 3, 4, 5, 6, 7, 8
 ##### 选择排序的具体实现
 
 ```java
-public class SelectionSort {
+public class SelectionSort<T extends Comparable> {
 
-    public void selectionSort(int[] nums) {
-        for (int i = 0; i < nums.length; i ++) {
+    public void selectionSort(T[] nums) {
+        for (int i = 0; i < nums.length; i++) {
             int index = i;
-            for (int j = i + 1; j < nums.length; j ++) {
-                if (nums[i] > nums[j])
+            for (int j = i + 1; j < nums.length; j++) {
+                if (nums[i].compareTo(nums[j]) == 1)
                     index = j;
             }
 
@@ -48,15 +48,15 @@ public class SelectionSort {
         }
     }
 
-    private void swap(int[] nums, int i, int j) {
-        int tmp = nums[i];
+    private void swap(T[] nums, int i, int j) {
+        T tmp = nums[i];
         nums[i] = nums[j];
         nums[j] = tmp;
     }
 
-    private String get(int[] nums) {
+    private String get(T[] nums) {
         StringBuilder res = new StringBuilder();
-        for (int i = 0; i < nums.length; i ++) {
+        for (int i = 0; i < nums.length; i++) {
             if (i == nums.length - 1)
                 res.append(nums[i]);
             else
@@ -67,14 +67,16 @@ public class SelectionSort {
     }
 
     private void testMain() {
-        int[] nums = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
-        System.out.println("排序前: " + get(nums));
-        selectionSort(nums);
-        System.out.println("排序后: " + get(nums));
+//        int[] nums = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
+        Float[] nums = {5.1f, 4.1f, 3.1f, 2.1f, 1.1f, 0.8f, 0.7f, 0.3f, 0.2f, 0f};
+        System.out.println("排序前: " + get((T[]) nums));
+        selectionSort((T[]) nums);
+        System.out.println("排序后: " + get((T[]) nums));
     }
 
     public static void main(String[] args) {
-        new SelectionSort().testMain();
+        SelectionSort<Float> selectSort = new SelectionSort<>();
+        selectSort.testMain();
     }
 }
 ```
