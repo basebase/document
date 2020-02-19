@@ -28,15 +28,14 @@
 
 ```java
 
-
-public void insertionSort(int[] nums) {
+public void insertionSort(T[] nums) {
     for (int i = 1; i < nums.length ; i ++) {
 
         /**
          *  这里一定是要大于0的, 如果>=0的话, 索引到位置0的时候然后减1个元素, 数组就会抛出异常...
          *  java.lang.ArrayIndexOutOfBoundsException: -1
          */
-        for (int j = i ; j > 0 && nums[j] < nums[j - 1] ; j --) {
+        for (int j = i ; j > 0 && nums[j].compareTo(nums[j - 1]) == -1  ; j --) {
             swap(nums, j - 1, j);
             /***
              *  这里的判断看起来比较冗余, 我们可以直接在for循环条件加上,
@@ -48,6 +47,58 @@ public void insertionSort(int[] nums) {
 //                    break;
 //                }
         }
+    }
+}
+
+private void swap(T[] nums, int i, int j) {
+    T tmp = nums[i];
+    nums[i] = nums[j];
+    nums[j] = tmp;
+}
+```
+
+
+##### 插入排序的改进
+
+虽然, 上面我们已经实现了插入排序, 但是每一次都需要进行交换, 交换过程就会有3次赋值的操作过程。这个是非常消耗性能的。那么, 有什么方法可以减少这样的交换过程呢？
+
+我们还是以下面这组数据为例
+![1-1](https://github.com/basebase/img_server/blob/master/leetcode/array/array03.png?raw=true)
+
+```text
+1. 我们以索引1开始判断, 首先复制一份副本, 然后和索引0进行比较, 发现元素6比元素8小, 我们将元素8移动到索引1的位置, 形成: [8, 8, 2, 3, 1, 5, 7, 4]
+然后发现没有可以比较的元素了, 把我们的副本数据写入到索引0的位置即可。
+更新后: 6, 8, 2, 3, 1, 5, 4, 7
+
+
+2. 索引2的位置, 数据复制一份副本, 然后和索引1进行比较, 发现元素2比元素8小, 我们把元素8移动一位, 形成: [6, 8, 8, 3, 1, 5, 7, 4],
+继续判断和索引0的元素比较, 发现元素2比元素6小, 元素6移动一位,
+形成: [6, 6, 8, 3, 1, 5, 7, 4], 最后发现没有可比较元素后, 写入到索引0的位置
+更新后: [2, 6, 8, 3, 1, 5, 7, 4]
+
+...以此类推
+
+最终输出: [1, 2, 3, 4, 5, 6, 7, 8]
+```
+
+虽然, 上述的流程和我们最初的写法感觉上没什么区别, 但是, 我们把交换操作修改为比较后做一次赋值操作。以前是3次交换, 现在是1次赋值操作。所以性能会更优。
+
+
+```java
+
+public void insertionSort(T[] nums) {
+    for (int i = 1; i < nums.length ; i ++) {
+        T e = nums[i]; // 当前元素的一份拷贝
+        int j ; // 保存元素e所插入的索引位置
+
+        /***
+         * 如果当前元素大于之前的元素, 我们当前索引位置还是i, 所以不用担心索引位置会错位。
+         */
+        for (j = i ; j > 0 && e.compareTo(nums[j - 1]) == -1  ; j --) {
+            nums[j] = nums[j - 1];
+        }
+
+        nums[j] = e;
     }
 }
 ```
