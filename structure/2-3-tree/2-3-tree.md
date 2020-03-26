@@ -42,6 +42,8 @@
 
 #### 2-3树如何维护绝对平衡的
 
+##### 2-3树添加流程
+
 2-3树在插入的过程中如何维护树的绝对平衡, 在看下图中的添加流程, 你需要记住以下几点:  
 + 2-3树查找的过程和二分搜索树一样, 小于查找左子树, 大于查找右子树。
 + 2-3在插入过程中, 若找到要插入的对应节点时是叶子节点, 不会新增节点并指向, 而是和当前叶子节点进行融合。
@@ -51,3 +53,28 @@
 
 [2-3树插入流程图]
 ![2-3树插入流程](https://github.com/basebase/img_server/blob/master/common/23t03.jpg?raw=true)
+
+
+##### 2-3树添加流程总结
+
+**在根节点添加(简单)**
++ 如果插入2-节点
+这个是最简单的, 只需要融合, 形成一个3-节点, 这也是满足2-3树的特性, 并且保持绝对平衡。
+
+![2-3树插入2-节点](https://github.com/basebase/img_server/blob/master/common/23t04.png?raw=true)
+
+
+2. 如果插入3-节点
+如果当前根节点已经是一个3-节点, 我们就暂时变为一个4-节点, 之后进行分解, 形成一个由3个2-节点组成的子树。
+
+![2-3树插入3-节点](https://github.com/basebase/img_server/blob/master/common/23t05.png?raw=true)
+
+
+**在叶子节点添加(复杂)**
+
++ 如果插入3-节点, 父节点为2-节点
+![2-3树插入3-节点](https://github.com/basebase/img_server/blob/master/common/23t06.png?raw=true)
+
+
++ 如果插入3-节点, 父节点为3-节点
+![2-3树插入3-节点](https://github.com/basebase/img_server/blob/master/common/23t07.png?raw=true)
