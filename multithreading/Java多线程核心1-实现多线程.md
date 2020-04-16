@@ -32,6 +32,8 @@ Oracle在介绍线程的时候, 说明了只有两种方式创建线程
 
 ###### 实现多线程创建
 
+[实现多线程代码](https://github.com/basebase/java-examples/tree/master/src/main/java/com/moyu/example/multithreading/ch01)
+
 ```java
 /***
  *  描述:   实现Runnable接口创建线程
