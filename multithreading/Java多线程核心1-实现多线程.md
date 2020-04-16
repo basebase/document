@@ -72,3 +72,124 @@ public class ThreadStyle extends Thread {
     }
 }
 ```
+
+
+
+##### 两种方法对比
+
+参考:
+
+[Difference between Thread vs Runnable interface in Java](https://javarevisited.blogspot.com/2012/01/difference-thread-vs-runnable-interface.html#ixzz6JlXYyMxZ)  
+[JAVA多线程之Runnable和Thread比较](https://zhuanlan.zhihu.com/p/32362557)  
+[“implements Runnable” vs “extends Thread” in Java](https://stackoverflow.com/questions/541487/implements-runnable-vs-extends-thread-in-java#)
+
+实现一个Runnable接口和继承Thread类, 我们用哪种方式会更好呢?
+
+也有很多人讨论此问题, 更多的是更倾向于使用Runnable接口的方式。
+
+那我们也整理一下, 为什么使用Runnable接口而非继承Thread类。
+1. 实现Runnable接口可以避免继承Thread类, 如果继承了Thread类此后便无法扩展任何其它类。(Java不支持多继承)
+
+2. 从设计上来看, 使用Runnable相当于一个任务。我们可以重用该任务。达到解耦作用。
+
+其中在stackoverflow上有一句话
+
+**However, one significant difference between implementing Runnable and extending Thread is that
+by extending Thread, each of your threads has a unique object associated with it, whereas implementing Runnable, many threads can share the same object instance.**
+
+大致的意思是: 实现Runnable和扩展Thread之间的一个重要区别是通过扩展Thread，您的每个线程都有一个与之关联的唯一对象，而实现Runnable时，许多线程可以共享同一对象实例。
+
+
+并提供了以下的一个例子:
+
+```java
+//Implement Runnable Interface...
+class ImplementsRunnable implements Runnable {
+
+private int counter = 0;
+
+public void run() {
+    counter++;
+    System.out.println("ImplementsRunnable : Counter : " + counter);
+ }
+}
+
+//Extend Thread class...
+class ExtendsThread extends Thread {
+
+private int counter = 0;
+
+public void run() {
+    counter++;
+    System.out.println("ExtendsThread : Counter : " + counter);
+ }
+}
+
+//Use the above classes here in main to understand the differences more clearly...
+public class ThreadVsRunnable {
+
+public static void main(String args[]) throws Exception {
+    // Multiple threads share the same object.
+    ImplementsRunnable rc = new ImplementsRunnable();
+    Thread t1 = new Thread(rc);
+    t1.start();
+    Thread.sleep(1000); // Waiting for 1 second before starting next thread
+    Thread t2 = new Thread(rc);
+    t2.start();
+    Thread.sleep(1000); // Waiting for 1 second before starting next thread
+    Thread t3 = new Thread(rc);
+    t3.start();
+
+    // Creating new instance for every thread access.
+    ExtendsThread tc1 = new ExtendsThread();
+    tc1.start();
+    Thread.sleep(1000); // Waiting for 1 second before starting next thread
+    ExtendsThread tc2 = new ExtendsThread();
+    tc2.start();
+    Thread.sleep(1000); // Waiting for 1 second before starting next thread
+    ExtendsThread tc3 = new ExtendsThread();
+    tc3.start();
+ }
+}
+```
+
+输出结果:
+
+```text
+ImplementsRunnable : Counter : 1
+ImplementsRunnable : Counter : 2
+ImplementsRunnable : Counter : 3
+ExtendsThread : Counter : 1
+ExtendsThread : Counter : 1
+ExtendsThread : Counter : 1
+```
+
+其实就结果来说, 代码本身没有问题, 但是测试的方法却又问题。大家可以看参考中的
+**“implements Runnable” vs “extends Thread” in Java**  
+@zEro的评论, 很有意思。
+
+如果, 我们在创建ExtendsThread的时候只创建一个对象, 然后再用Thread启动呢? 可以发现数据一样是被共享的。
+
+```java
+ExtendsThreadV2 et = new ExtendsThreadV2();
+
+Thread tc1 = new Thread(et);
+tc1.start();
+Thread.sleep(1000);
+
+Thread tc2 = new Thread(et);
+tc2.start();
+Thread.sleep(1000);
+
+Thread tc3 = new Thread(et);
+tc3.start();
+```
+
+输出结果:
+
+```text
+ExtendsThread : Counter : 1
+ExtendsThread : Counter : 2
+ExtendsThread : Counter : 3
+```
+所以资源共享, 我觉得说只有Runnable能实现显然不是很能让人信服。
