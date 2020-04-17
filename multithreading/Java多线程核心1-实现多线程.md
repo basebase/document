@@ -192,4 +192,4 @@ ExtendsThread : Counter : 1
 ExtendsThread : Counter : 2
 ExtendsThread : Counter : 3
 ```
-所以资源共享, 我觉得说只有Runnable能实现显然不是很能让人信服。
+所以资源共享, 我觉得说只有Runnable能实现显然不是很能让人信服。当然可看到很多人写文章说明为什么Runnable可以资源共享而Thread不行, 但文章基本大同小异。[欢迎大家在评论区留言讨论。]
