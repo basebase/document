@@ -261,6 +261,6 @@ Thread run() ...
 
 ##### 总结
 1. 创建线程的方式只有两种
-2. Thread和Runnable方式对比
-3. 为什么会有多种创建线程的方式
+2. Thread和Runnable方式对比, 以及应当应当使用哪种方式更为优雅。
+3. 为什么会出现多种创建线程的方式, 分析多种创建线程方式本质。
 4. [本章代码](https://github.com/basebase/java-examples/tree/master/src/main/java/com/moyu/example/multithreading/ch01)
