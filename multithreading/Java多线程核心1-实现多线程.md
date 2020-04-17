@@ -164,7 +164,7 @@ ExtendsThread : Counter : 1
 ExtendsThread : Counter : 1
 ```
 
-其实就结果来说, 代码本身没有问题, 但是测试的方法却又问题。大家可以看参考中的
+其实就结果来说, 代码本身没有问题, 但是测试的方法却有问题。大家可以看参考中的
 **“implements Runnable” vs “extends Thread” in Java**  
 @zEro的评论, 很有意思。
 
