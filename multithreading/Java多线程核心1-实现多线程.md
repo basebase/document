@@ -237,7 +237,7 @@ public void run() {
 }
 ```
 
-可以看到, 我们在构造Thread类的时候, 如果传入Runnable对象就用Runnable对象的run方法, 就是这么简单的一句话。但是, 如果我们继承Thread类并重写其run()方法, 那么久不会使用上面的run()方法, 而是我们自定义的方法。
+可以看到, 我们在构造Thread类的时候, 如果传入Runnable对象就用Runnable对象的run方法, 就是这么简单的一句话。但是, 如果我们继承Thread类并重写其run()方法, 那么就不会使用上面的run()方法, 而是我们自定义的方法。
 
 通过上面的了解, 可得:
 * Runnable方法: 最终调用target.run()
@@ -249,3 +249,18 @@ public void run() {
 Thread run() ...
 ```
 对, 因为Thread类重写了run()方法, 所以Runnable是不会被调用的。
+
+
+##### 多种线程创建方式分析
+经过上面的学习, 已经知道如何创建一个线程了。那么, 为什么会有这么多创建线程的方式呢?
+
+其实可以发现, 无论是线程池的方式创建还是匿名内部类或者实现Callable接口又或者是
+定时器。他们最终都是创建Thread对象或者实现Runnable接口的方式。在比如说JDK8的lambda表达式也可以创建一个线程, 那这也算一种创建方式吗?
+
+所以, 可能创建线程有很多"姿势", 但是归其本质就是Thread和Runnable。
+
+##### 总结
+1. 创建线程的方式只有两种
+2. Thread和Runnable方式对比
+3. 为什么会有多种创建线程的方式
+4. [本章代码](https://github.com/basebase/java-examples/tree/master/src/main/java/com/moyu/example/multithreading/ch01)
