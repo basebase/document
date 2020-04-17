@@ -193,3 +193,59 @@ ExtendsThread : Counter : 2
 ExtendsThread : Counter : 3
 ```
 所以资源共享, 我觉得说只有Runnable能实现显然不是很能让人信服。当然可看到很多人写文章说明为什么Runnable可以资源共享而Thread不行, 但文章基本大同小异。[欢迎大家在评论区留言讨论。]
+
+
+###### 同时使用Thread和Runnable
+实现线程要么使用Thread, 要么使用Runnable来实现。两种一起上[实际开发不会出现]?会是什么一个效果?
+
+请看下面这个例子:
+
+```java
+
+/***
+ *   描述:      同时使用Runnable和Thread两种方式实现线程
+ */
+public class BothRunnableThread {
+    public static void main(String[] args) throws Exception {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("Runnable run()...");
+            }
+        }) {
+            @Override
+            public void run() {
+                System.out.println("Thread run() ...");
+            }
+        }.start();
+    }
+}
+```
+
+在运行代码之前能正确的说出输出结果吗?
+在说出结果之前, 我们先来看看Thread类的run方法是如何实现的。
+
+```java
+// Thread.java
+private Runnable target;
+
+@Override
+public void run() {
+    if (target != null) {
+        target.run();
+    }
+}
+```
+
+可以看到, 我们在构造Thread类的时候, 如果传入Runnable对象就用Runnable对象的run方法, 就是这么简单的一句话。但是, 如果我们继承Thread类并重写其run()方法, 那么久不会使用上面的run()方法, 而是我们自定义的方法。
+
+通过上面的了解, 可得:
+* Runnable方法: 最终调用target.run()
+* Thread方法: run()方法被重写
+
+那么, 在了解了Thread和Runnable调用方法的区别后, 可以正确的输出答案吗?
+
+```text
+Thread run() ...
+```
+对, 因为Thread类重写了run()方法, 所以Runnable是不会被调用的。
