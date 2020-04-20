@@ -63,7 +63,7 @@ Exception in thread "main" java.lang.IllegalThreadStateException
 	at com.moyu.example.multithreading.ch02.CanStartTwice.main(CanStartTwice.java:10)
 ```
 
-如果执行两次run()方法肯定不会抛出任何异常信息, 毕竟直接调用run()就和调用普通方法是一样的。那么为什么会抛出异常呢?
+如果执行两次run()方法肯定不会抛出任何异常信息, 毕竟直接调用run()就和调用普通方法是一样的。那么调用两次start()方法为什么会抛出异常呢?
 
 ##### start vs run 内部
 
