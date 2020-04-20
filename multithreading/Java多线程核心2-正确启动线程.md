@@ -97,6 +97,8 @@ private native void start0();
 ```
 可以看到start()方法正式通过threadStatus变量来判断多次启动, 初始值为0表示NEW状态。(线程状态后面会介绍)并将该线程加入线程组中, 随即调用start0()方法, 该方法是一个本地方法, 有兴趣的话可以看看Open JDK源码。
 
+当我们在一次的调用start()方法, threadStatus变量的值不在为0直接抛出异常。
+
 我这里用的是JDK8, 对应Open JDK C/C++文件链接为:
 
 [Thread.c](https://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/f0b93fbd8cf8/src/share/native/java/lang/Thread.c)
@@ -171,14 +173,6 @@ static void thread_entry(JavaThread* thread, TRAPS) {
 ```
 
 **ps: 本人不会C/C++, 也是参考别人的博文。**
-
-
-当我们在一次的调用start()方法, threadStatus变量的值不在为0直接抛出异常。
-
-
-
-
-
 
 
 ##### 结尾
