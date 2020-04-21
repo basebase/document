@@ -29,3 +29,11 @@
 | public static boolean interrupted() | 测试当前线程是否已经中断。线程的中断状态 由该方法清除换句话说，如果连续两次调用该方法，则第二次调用将返回 false|
 | public boolean isInterrupted()      | 测试线程是否已经中断。线程的中断状态不受该方法的影响。 |
 | public void interrupt()             |   中断线程。 |
+
+
+
+##### 总结
+
+参考:
+  1. [详细分析 Java 中断机制](https://www.infoq.cn/article/java-interrupt-mechanism)
+  2. [Java里一个线程调用了Thread.interrupt()到底意味着什么？](https://www.zhihu.com/question/41048032)
