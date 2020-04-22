@@ -117,8 +117,7 @@ public class RightWayStopThreadWithSleep {
     }
 }
 ```
-
-那么, 该例子在最后是会抛出一个异常信息的。
+该程序最终会退出阻塞并抛出一个异常信息。
 
 推荐参考:
   * [When does Java's Thread.sleep throw InterruptedException?
