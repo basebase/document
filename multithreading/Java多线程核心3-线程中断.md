@@ -36,6 +36,13 @@
 上面的基本原理和基本API我们已经大概了解了线程中断是什么意思, 但是具体如何去做呢?
 我们通过具体的例子来揭Java线程中断神秘的面纱吧...
 
+推荐实战例子参考:
+  * [Interrupting a Thread](https://www.javatpoint.com/interrupting-a-thread)
+  * [How a thread can interrupt an another thread in Java?
+](https://www.geeksforgeeks.org/how-a-thread-can-interrupt-an-another-thread-in-java/)
+
+###### 不带阻塞, 仅仅中断一个线程
+
 ```java
 /***
  *      描述:     run方法内没有sleep或wait方法时停止线程。
@@ -71,8 +78,55 @@ public class RightWayStopThreadWithoutSleep implements Runnable {
 
 上面的例子中, main线程通过调用interrupt方法将线程t1的中断状态设置为true, 线程t1可以在合适的时候调用interrupted或者isInterrupted方法来检测并做相应的处理。当然, 也可以不对中断状态做任何处理。
 
+
+###### 带有阻塞(sleep)的中断
+假设, 我们在线程中加入了阻塞(sleep)方法呢?执行线程中断又会是什么结果?
+
+```java
+
+/***
+ *      描述：     run方法带有sleep的中断线程的写法
+ */
+public class RightWayStopThreadWithSleep {
+    public static void main(String[] args) throws InterruptedException {
+        Runnable runnable = () -> {
+          try {
+              int num = 0;
+              while (num <= 300 && !Thread.currentThread().isInterrupted()) {
+                  if (num % 100 == 0)
+                      System.out.println(num + "是100的倍数");
+                  num ++;
+              }
+              Thread.sleep(2000);
+              System.out.println(Thread.currentThread().getName() + " 线程结束");
+          } catch (InterruptedException e) {
+              e.printStackTrace();
+          }
+        };
+
+        Thread t1 = new Thread(runnable);
+        t1.start();
+
+        // 等待1s让线程t1优先执行
+        Thread.sleep(1000);
+        // t1线程休眠2s, main线程执行中断线程, 但是t1处于阻塞状态
+        // 那么t1退出阻塞状态并抛出一个java.lang.InterruptedException异常
+        t1.interrupt();
+
+        System.out.println(Thread.currentThread().getName() + " 线程结束");
+    }
+}
+```
+
+那么, 该例子在最后是会抛出一个异常信息的。
+
+推荐参考:
+  * [When does Java's Thread.sleep throw InterruptedException?
+](https://stackoverflow.com/questions/1087475/when-does-javas-thread-sleep-throw-interruptedexception)
+
 ##### 总结
 
 参考:
-  1. [详细分析 Java 中断机制](https://www.infoq.cn/article/java-interrupt-mechanism)
-  2. [Java里一个线程调用了Thread.interrupt()到底意味着什么？](https://www.zhihu.com/question/41048032)
+  1. [处理 InterruptedException](https://www.ibm.com/developerworks/cn/java/j-jtp05236.html)
+  2. [详细分析 Java 中断机制](https://www.infoq.cn/article/java-interrupt-mechanism)
+  3. [Java里一个线程调用了Thread.interrupt()到底意味着什么？](https://www.zhihu.com/question/41048032)
