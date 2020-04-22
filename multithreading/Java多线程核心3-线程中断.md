@@ -31,6 +31,44 @@
 | public void interrupt()             |   中断线程。 |
 
 
+##### 线程中断实例
+上面的基本原理和基本API我们已经大概了解了线程中断是什么意思, 但是具体如何去做呢?
+我们通过具体的例子来揭Java线程中断神秘的面纱吧...
+
+```java
+/***
+ *      描述:     run方法内没有sleep或wait方法时停止线程。
+ */
+public class RightWayStopThreadWithoutSleep implements Runnable {
+
+    @Override
+    public void run() {
+        int num = 0;
+        // 在不加入Thread.currentThread().isInterrupted()判断和没事人一样。
+        while (!Thread.currentThread().isInterrupted() && num <= Integer.MAX_VALUE / 2) {
+            if (num % 10000 == 0)
+                System.out.println(num + "是10000的倍数");
+            num ++;
+        }
+
+        System.out.println("任务运行结束...");
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        Thread t1 = new Thread(new RightWayStopThreadWithoutSleep());
+        t1.start();
+
+        // 用来等待1s后再进行中断
+        Thread.sleep(1000);
+        // main线程中断t1线程
+        t1.interrupt();
+    }
+}
+```
+
+其中, interrupt方法是唯一能将中断状态设置为true的方法。静态方法interrupted会将当前线程的中断状态清除, 而我们使用isInterrupted方法来进行检测是否中断线程。
+
+上面的例子中, main线程通过调用interrupt方法将线程t1的中断状态设置为true, 线程t1可以在合适的时候调用interrupted或者isInterrupted方法来检测并做相应的处理。当然, 也可以不对中断状态做任何处理。
 
 ##### 总结
 
