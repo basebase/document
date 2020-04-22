@@ -119,6 +119,37 @@ public class RightWayStopThreadWithSleep {
 ```
 该程序最终会退出阻塞并抛出一个异常信息。
 
+
+###### 循环迭代每次sleep的中断
+```java
+/**
+ *      描述:         在执行线程中循环调用sleep或者wait等方法(可以不判断当前线程是否中断状态)
+ */
+public class RightWayStopThreadWithSleepEveryLoop {
+    public static void main(String[] args) throws InterruptedException {
+        Runnable runnable = () -> {
+            try {
+                int num = 0;
+                while (num < 1000 /* && !Thread.currentThread().isInterrupted() */) {
+                    System.out.println("当前的值为: " + num);
+                    num ++;
+                    Thread.sleep(10);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        };
+
+        Thread t1 = new Thread(runnable);
+        t1.start();
+
+        t1.sleep(5000);
+        t1.interrupt();
+    }
+}
+```
+每次循环迭代中都调用sleep方法可以不需要在循环中判断是否需要中断。当我们调用线程的中断方法时线程处于阻塞状态会退出阻塞状态并抛出一个异常。所以这和检查是否中断状态无关, 而是当中断遇到阻塞的时候就会退出阻塞抛出异常。(最前面推荐的实战例子也有对应的英文介绍)
+
 推荐参考:
   * [When does Java's Thread.sleep throw InterruptedException?
 ](https://stackoverflow.com/questions/1087475/when-does-javas-thread-sleep-throw-interruptedexception)
