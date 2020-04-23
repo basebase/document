@@ -208,6 +208,8 @@ public class RightWayStopThreadWithSleepEveryLoop {
 
 当我们提供一个方法应用到线程的同时, 我们需要注意在处理异常的时候不要吞掉异常信息, 而是在方法中抛出来让线程方法去捕获异常, 这样在线程中断的时候就能感知到, 能在异常的同时写入对应的事件。
 
+
+<font color="#60C66C">1: 传递中断(优先选择)</font>
 ```java
 /***
  *      描述:     try/catch捕获InterruptedException后
