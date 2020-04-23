@@ -40,6 +40,8 @@
   * [Interrupting a Thread](https://www.javatpoint.com/interrupting-a-thread)
   * [How a thread can interrupt an another thread in Java?
 ](https://www.geeksforgeeks.org/how-a-thread-can-interrupt-an-another-thread-in-java/)
+  * [When does Java's Thread.sleep throw InterruptedException?
+](https://stackoverflow.com/questions/1087475/when-does-javas-thread-sleep-throw-interruptedexception)
 
 ###### 不带阻塞, 仅仅中断一个线程
 
@@ -149,10 +151,6 @@ public class RightWayStopThreadWithSleepEveryLoop {
 }
 ```
 每次循环迭代中都调用sleep方法可以不需要在循环中判断是否需要中断。当我们调用线程的中断方法时线程处于阻塞状态会退出阻塞状态并抛出一个异常。所以这和检查是否中断状态无关, 而是当中断遇到阻塞的时候就会退出阻塞抛出异常。(最前面推荐的实战例子也有对应的英文介绍)
-
-推荐参考:
-  * [When does Java's Thread.sleep throw InterruptedException?
-](https://stackoverflow.com/questions/1087475/when-does-javas-thread-sleep-throw-interruptedexception)
 
 ##### 总结
 
