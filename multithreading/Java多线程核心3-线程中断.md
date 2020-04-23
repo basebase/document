@@ -200,7 +200,7 @@ public class RightWayStopThreadWithSleepEveryLoop {
 
 ② 如果对异常不是很了解的同学可能需要稍微了解一下, 当发生异常, 我们try/catch住后,try内容后面是不会执行的而是进入我们的catch块。而我们的catch没有抛出其它新的异常或者return, 所以后面的代码依旧可以运行。也就是要满足while退出条件。(参考: [java抛出异常后代码继续执行的情况](https://blog.csdn.net/anne_IT_blog/article/details/76926920))
 
-当我们第一次调用了线程中断, 确实触发了异常。异常被捕获catch并没有做任何其它工作。而我们的sleep已经清空了中断状态了。那么, 这种清空下如何处理呢?
+当我们第一次调用了线程中断, 确实触发了异常。异常被捕获catch并没有做任何其它工作。而我们的sleep已经清空了中断状态了。那么, 这种情况下如何处理呢?
 
 ##### 总结
 
