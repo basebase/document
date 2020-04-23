@@ -161,33 +161,43 @@ public class RightWayStopThreadWithSleepEveryLoop {
 /***
  *      描述：     while体内加入try/catch, 会导致中断失效
  */
-public class CanInterrupt {
-    public static void main(String[] args) throws InterruptedException {
-        Thread t1 = new Thread(getRunnable());
-        t1.start();
-        Thread.sleep(5000);
-        t1.interrupt();
-    }
+ public class CanInterrupt {
+     public static void main(String[] args) throws InterruptedException {
+         Thread t1 = new Thread(getRunnable());
+         t1.start();
+         Thread.sleep(5000);
+         t1.interrupt();
+     }
 
-    public static Runnable getRunnable() {
-        return () -> {
-            int num = 0;
-            while (num < 100000) {
-                System.out.println("当前值为: " + num);
-                try {
-                    Thread.sleep(300);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+     public static Runnable getRunnable() {
+         return () -> {
+             int num = 0;
+             while (num < 100000) {
+                 System.out.println("当前值为: " + num);
+                 try {
+                     Thread.sleep(300);
+ //                    System.out.println("当前值为: " + num);
+                 } catch (InterruptedException e) {
+                     e.printStackTrace();
+                 }
 
-                num ++;
-            }
-        };
-    }
-}
+                 num ++;
+             }
+         };
+     }
+ }
 ```
 
-线程会抛出异常, 但可以发现线程没有被中断。还一直在执行, 直到大于while条件或者手动退出。这是为什么呢？
+线程会抛出异常, 但可以发现线程没有被中断。还一直在执行, 直到大于while条件或者手动退出。这是为什么呢?
+
+我们设置让线程中断, 被中断的线程就不应该在继续执行了啊!里应如此, 而且确实也抛出了异常信息。这里我们有两个点: (try/catch) + sleep。
+
+① sleep可以清空线程的中断状态
+
+
+② 如果对异常不是很了解的同学可能需要稍微了解一下, 当发生异常, 我们try/catch住后,try内容后面是不会执行的而是进入我们的catch块。而我们的catch没有抛出其它新的异常或者return, 所以后面的代码依旧可以运行。也就是要满足while退出条件。(参考: [java抛出异常后代码继续执行的情况](https://blog.csdn.net/anne_IT_blog/article/details/76926920))
+
+当我们第一次调用了线程中断, 确实触发了异常。异常被捕获catch并没有做任何其它工作。而我们的sleep已经清空了中断状态了。那么, 这种清空下如何处理呢?
 
 ##### 总结
 
