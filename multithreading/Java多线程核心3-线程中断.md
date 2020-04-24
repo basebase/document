@@ -353,6 +353,24 @@ public class RightWayStopThreadInProd2 {
   3. [循环迭代, 异常信息被吞并, 线程响应中断但还是继续执行](#循环迭代捕获sleep方法)
 
 
+
+##### 响应中断方法列表
+我们只对sleep方法做了中断的响应, 可能在中断之前做什么其他操作等之类的。
+那么除了sleep方法还有哪些方法可以响应中断信息呢?
+
+|  类 | 方法 |
+|     :-----|                              :---- |
+|  Object   |   wait()/wait(long)/wait(long, int)|
+|  Thread   |   sleep()/sleep(long)/join()/join(long)/join(long, int)        |
+|  BlockingQueue   | take()/put(E) |
+|  Lock   |   lockInterruptibly()                |
+|  CountDownLatch   |   await()                  |
+|  CyclicBarrier   |   await()                   |
+|  Exchanger   |   exchange(V)                   |
+|  InterruptibleChannel   |                      |
+|  Selector   |                      |
+
+
 ##### 总结
 
 参考:
