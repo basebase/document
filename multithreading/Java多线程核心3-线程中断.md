@@ -354,6 +354,66 @@ public class RightWayStopThreadInProd2 {
 
 
 
+##### interrupt vs stop
+可以看到stop方法在JDK中已经被弃用了, 已经不推荐使用了。为什么呢?  
+如果我们使用stop方法终止线程, 那么被终止的线程会直接停止, 这就会造成一个后果
+产生脏数据。
+
+比如交易系统, 你给我转账100元, 但是实际只有10元, 但是认为转账成功。  
+在比如说, 我们给一个班级中的小组分配作业, 有10个小组, 其中只有3个小组被分配到作业, 其余的小组没有。而这个时候我们也以为分配成功了。
+
+这些问题会给数据造成不一致性。而且排查问题也特别的麻烦。  
+我们通过下面的例子来看看stop运行的结果。
+
+```java
+
+
+/**
+ *     描述:      使用stop()方法停止线程, 会导致线程运行到一半就停止, 没办法完成一个基本单位的操作
+ *               比如说: 假设一个班级中有10个小组, 每个小组都需要领取自己的作业, 如果使用stop()停止线程可能会出现有的学生没有领取到自己的作业
+ */
+public class StopThread {
+
+    public static void main(String[] args) throws InterruptedException {
+        Thread t1 = new Thread(getRunnable());
+        t1.start();
+        Thread.sleep(2000);
+        t1.stop();
+    }
+
+    public static Runnable getRunnable() {
+        return () -> {
+
+            /***
+             *
+             *  这里, 就是我们的一个基本的执行块。
+             *      然而, 当线程调用了stop()方法时候, 而stop()方法不会抛出异常而是一个Error子类ThreadDeath。
+             *      通过结果可以看到, stop()停止线程后, 一个班级下领取到作业, 有的没有。
+             *      而我们之前使用interrupt()方法, 可以在catch中做一些善后操作, 比如回滚数据等。
+             *      而stop()方法完全没有任何商量余地, 直接就GG了。所以, 不推荐使用stop()方法
+             *
+             */
+
+            for (int i = 0; i < 10; i ++) {
+                System.out.println("第 " + i + " 个班级下");
+                for (int j = 0; j < 10; j ++) {
+                    System.out.println("====> 第 " + i + " 个班级下第 " + j + " 个小组领取作业完成");
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        System.out.println("会执行我catch吗?");
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            System.out.println("exit.");
+        };
+    }
+}
+```
+
+
 ##### 响应中断方法列表
 我们只对sleep方法做了中断的响应, 可能在中断之前做什么其他操作等之类的。
 那么除了sleep方法还有哪些方法可以响应中断信息呢?
