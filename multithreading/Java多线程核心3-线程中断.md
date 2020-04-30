@@ -359,11 +359,16 @@ public class RightWayStopThreadInProd2 {
 如果我们使用stop方法终止线程, 那么被终止的线程会直接停止, 这就会造成一个后果
 产生脏数据。
 
+使用stop方法会释放锁。
+
 比如交易系统, 你给我转账100元, 但是实际只有10元, 但是认为转账成功。  
 在比如说, 我们给一个班级中的小组分配作业, 有10个小组, 其中只有3个小组被分配到作业, 其余的小组没有。而这个时候我们也以为分配成功了。
 
 这些问题会给数据造成不一致性。而且排查问题也特别的麻烦。  
 我们通过下面的例子来看看stop运行的结果。
+
+可以参考Oracle给出的文档, 为什么弃用了stop, suspend和resume相关方法。  
+[Java Thread Primitive Deprecation](https://docs.oracle.com/javase/8/docs/technotes/guides/concurrency/threadPrimitiveDeprecation.html)
 
 ```java
 
