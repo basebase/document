@@ -545,7 +545,7 @@ class Consumer {
 
 可以看到, 程序是没有被终止的, 这是因为"生产者(Producer)"发现队列已经满了, 不能再写入, 进而阻塞线程, 然而, 虽然我们的main线程更新的volatile的状态值, 但是, 线程被阻塞无法进行while的判断条件, 所以导致线程不能立即响应中断信号。
 
-如果对阻塞队列不是很熟悉的话, 可以参考源码中的
+如果对阻塞队列不是很熟悉的话, 可以参考另外一个例子, 使用sleep模拟阻塞超长时间
 [WrongWayVolatileCantStop.java](https://github.com/basebase/java-examples/blob/master/src/main/java/com/moyu/example/multithreading/ch03/WrongWayVolatileCantStop.java)
 
 那么, 上述的程序如何修复呢? 其实很简单, 依旧是使用线程中断的方法, 可以让阻塞中的线程抛出中断异常信息。参考源码[WrongWayVolatileFixed.java](https://github.com/basebase/java-examples/blob/master/src/main/java/com/moyu/example/multithreading/ch03/WrongWayVolatileFixed.java)
