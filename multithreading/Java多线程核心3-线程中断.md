@@ -419,6 +419,139 @@ public class StopThread {
 ```
 
 
+##### 使用volatile停止线程?
+通常, 我们看到有很多人利用一个volatile设置一个变量值, 通过读取变量值来判断是否中断线程。  
+那么, 通过volatile进行中断线程, 有没有问题呢?
+
+我们通过两个例子来看看volatile存在的一个问题。
+
+```java
+
+/***
+ *      描述:     演示使用volatile用来停止线程,
+ */
+public class WrongWayVolatile {
+
+    private volatile boolean canceled = false;
+
+    public static void main(String[] args) throws InterruptedException {
+        WrongWayVolatile wrongWayVolatile = new WrongWayVolatile();
+        Runnable runnable = wrongWayVolatile.getRunnable();
+        Thread t1 = new Thread(runnable);
+
+        t1.start();
+        Thread.sleep(5000);
+        wrongWayVolatile.canceled = true;
+    }
+
+    public Runnable getRunnable() {
+        return () -> {
+            try {
+                int num = 0;
+                while (num < 100000 && !canceled) {
+                    System.out.println("当前的值为: " + num);
+                    Thread.sleep(10);
+                    num ++;
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                System.out.println("线程终止...");
+            }
+        };
+    }
+}
+```
+
+上述的例子中, 可以正常的停止掉一个线程, 看着没有任何问题。
+
+但是, 假设如果我们要停止的线程被阻塞了呢? 线程被挂起, 通过volatile变量能终止线程吗?
+我们利用阻塞队列来模拟这种情况。当队列满了, 线程就会被挂起。这个时候如果我们修改volatile
+变量状态, 能否终止线程呢?
+
+```java
+
+
+/***
+ *      描述:     使用volatile停止线程, 当遇到阻塞还能停止吗?
+ */
+
+public class WrongWayVolatileCantStop2 {
+    public static void main(String[] args) throws InterruptedException {
+        BlockingQueue storage = new ArrayBlockingQueue(10);
+        Producer p = new Producer(storage);
+
+        Thread producerThread = new Thread(p);
+        producerThread.start();
+
+        Thread.sleep(3000);
+        Consumer c = new Consumer(storage);
+        while (c.needMoreNums()) {
+            System.out.println(c.storage.take() + "被消费了 !");
+            Thread.sleep(100);
+        }
+
+        System.out.println("消费完成...");
+        p.canceled = true;
+
+        System.out.println("状态: " + p.canceled);
+        System.out.println("当前生产者量级: " + p.storage.size());
+    }
+}
+
+
+class Producer implements Runnable {
+
+    public volatile boolean canceled = false;
+    BlockingQueue storage;
+
+    public Producer(BlockingQueue storage) {
+        this.storage = storage;
+    }
+
+    @Override
+    public void run() {
+        try {
+
+            int num = 0;
+            while (num < 100000 && !canceled) {
+                System.out.println("当前值: " + num + " 放入队列中了!");
+                storage.put(num); // 当队列满了, 线程在这里就会被挂起
+                Thread.sleep(10);
+                num ++;
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            System.out.println("生产者结束运行");
+        }
+    }
+}
+
+class Consumer {
+    BlockingQueue storage;
+
+    public Consumer(BlockingQueue storage) {
+        this.storage = storage;
+    }
+
+    public boolean needMoreNums() {
+        if (Math.random() > 0.95)
+            return false;
+        return true;
+    }
+}
+```
+
+可以看到, 程序是没有被终止的, 这是因为"生产者(Producer)"发现队列已经满了, 不能再写入, 进而阻塞线程, 然而, 虽然我们的main线程更新的volatile的状态值, 但是, 线程被阻塞无法进行while的判断条件, 所以导致线程不能立即响应中断信号。
+
+如果对阻塞队列不是很熟悉的话, 可以参考源码中的
+[WrongWayVolatileCantStop.java](https://github.com/basebase/java-examples/blob/master/src/main/java/com/moyu/example/multithreading/ch03/WrongWayVolatileCantStop.java)
+
+那么, 上述的程序如何修复呢? 其实很简单, 依旧是使用线程中断的方法, 可以让阻塞中的线程抛出中断异常信息。参考源码[WrongWayVolatileFixed.java](https://github.com/basebase/java-examples/blob/master/src/main/java/com/moyu/example/multithreading/ch03/WrongWayVolatileFixed.java)
+
+经过上面的两个例子, volatile看似可以用来终止一个线程, 但是如果遇到线程阻塞却没有办法立即终止线程。
+
 ##### 响应中断方法列表
 我们只对sleep方法做了中断的响应, 可能在中断之前做什么其他操作等之类的。
 那么除了sleep方法还有哪些方法可以响应中断信息呢?
