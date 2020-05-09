@@ -577,10 +577,10 @@ class Consumer {
 ##### 总结
 
 本节内容:
-  * 如何正确的停止线程(使用interrupt()方法), 反观stop/suspend/resume先关方法已经被弃用。而使用volatile来停止线程遇到线程阻塞则无法中断线程。
+  * 如何正确的停止线程(使用interrupt()方法), 反观stop/suspend/resume相关方法已经被弃用。而使用volatile来停止线程遇到线程阻塞则无法中断线程。
 
   * 线程中断, 异常信息不能吞掉, 而是向上抛出异常或者处理异常信息。
-  
+
 
 
 参考:
