@@ -471,7 +471,6 @@ public class WrongWayVolatile {
 
 ```java
 
-
 /***
  *      描述:     使用volatile停止线程, 当遇到阻塞还能停止吗?
  */
@@ -492,6 +491,7 @@ public class WrongWayVolatileCantStop2 {
         }
 
         System.out.println("消费完成...");
+        // 当消费完后, 我们更新生产者的状态, 让其停止线程执行
         p.canceled = true;
 
         System.out.println("状态: " + p.canceled);
@@ -516,6 +516,11 @@ class Producer implements Runnable {
             int num = 0;
             while (num < 100000 && !canceled) {
                 System.out.println("当前值: " + num + " 放入队列中了!");
+
+                /***
+                 *      当队列满了之后, 线程就会再这里被挂起, 如果没有被唤醒, 那么就算我们的canceled变量更新
+                 *      当前的while判断也是读取不到的, 从而无法终止当前的循环条件, 而是会一直阻塞再此。
+                 */
                 storage.put(num); // 当队列满了, 线程在这里就会被挂起
                 Thread.sleep(10);
                 num ++;
@@ -550,7 +555,7 @@ class Consumer {
 
 那么, 上述的程序如何修复呢? 其实很简单, 依旧是使用线程中断的方法, 可以让阻塞中的线程抛出中断异常信息。参考源码[WrongWayVolatileFixed.java](https://github.com/basebase/java-examples/blob/master/src/main/java/com/moyu/example/multithreading/ch03/WrongWayVolatileFixed.java)
 
-经过上面的两个例子, volatile看似可以用来终止一个线程, 但是如果遇到线程阻塞却没有办法立即终止线程。
+**经过上面的两个例子, volatile看似可以用来终止一个线程, 但是如果遇到线程阻塞却没有办法立即终止线程。**
 
 ##### 响应中断方法列表
 我们只对sleep方法做了中断的响应, 可能在中断之前做什么其他操作等之类的。
