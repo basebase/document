@@ -378,3 +378,104 @@ public class WaitNotifyReleaseOwnMonitor {
     }
 }
 ```
+
+
+##### wait/notify/notifyAll常见面试问题
+
+##### 使用wait/notify实现生产消费模型
+通过上面几个例子, 大概对wait/notify/notifyAll已经有一定的认识了, 也知道如何去应用了。  
+那么, 我们通过wait/notify来实现一个生产消费者模型, 当我们生产者达到一定的上限后就会阻塞不在生产数据, 当我们的消费者没有数据可消费时候进入阻塞等待生产者生产数据。
+
+
+```java
+
+/***
+ *      描述:         用wait/notify实现生产消费模型
+ */
+public class ProducerConsumerModel {
+
+    private Object obj = new Object();
+    // 生产者写入此数据结构中, 消费者读取此数据结构中数据
+    private LinkedList<Integer> storage = new LinkedList<>();
+    private static final Integer CONTAIN = 100;
+    private static final Integer MAX_SIZE = 10;
+
+
+    /***
+     *            生产者线程任务:
+     *                 生产者任务上限是10条数据, 当超过后就会进入阻塞状态, 需要其它线程将其唤醒。
+     */
+    public Runnable producerTask() {
+        return () -> {
+            for (int i = 0; i < CONTAIN; i ++) {
+                synchronized (obj) {
+                    try {
+                        // 如果队列已满, 进入阻塞
+                        if (storage.size() == MAX_SIZE)
+                            obj.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    storage.add(i);
+                    System.out.println(Thread.currentThread().getName() + " 生产数据 : " + i + " 加入队列队列大小 : " + storage.size());
+                    // 队列已经有数据了, 唤醒消费者消费数据
+                    obj.notify();
+                }
+            }
+        };
+    }
+
+
+    /***
+     *            消费者线程任务:
+     *                 消费者消费数据, 如果当前队列数据为空则进入阻塞, 需要其它线程将其唤醒
+     */
+    public Runnable consumerTask() {
+        return () -> {
+            for (int i = 0; i < CONTAIN; i ++) {
+                synchronized (obj) {
+                    try {
+                        // 如果没有数据可以消费, 则进入阻塞等待生产者将其唤醒
+                        if (storage.size() == 0)
+                            obj.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(Thread.currentThread().getName() + " 消费数据 : " + storage.poll() + " 队列还剩下 " + storage.size() + " 元素没有被消费");
+                    // 队列现在有空闲, 唤醒生产者生产数据
+                    obj.notify();
+                }
+
+
+            }
+        };
+    }
+
+    public static void main(String[] args) {
+        ProducerConsumerModel producerConsumerModel2 = new ProducerConsumerModel();
+        Thread producerThread = new Thread(producerConsumerModel2.producerTask(), "producer");
+        Thread consumerThread = new Thread(producerConsumerModel2.consumerTask(), "consumer");
+
+        producerThread.start();
+        consumerThread.start();
+
+    }
+}
+```
+
+
+**注意: 如果我们把producerTask和consumerTask两个方法的synchronized放在最外层会有什么问题**
+
+```java
+synchronized (obj) {
+    for (int i = 0; i < CONTAIN; i ++) {
+        ...
+    }
+}
+```
+
+具体代码参考ProducerConsumerModel2.java
+
+你会发现, 每次都是生产者堆满了之后唤醒消费者, 消费者消费完了唤醒生产者。先不要着急往下看, 自己先思考一下为什么?
+
+聪明的你肯定想到啦, 必然是这样啊, synchronized放在最外层, 就算我们的生产者或者消费者唤醒正在阻塞的线程, 但是此时锁是在某一个线程上的, 只有等待持有锁的线程进入阻塞另外一个线程才能获取到锁进而执行。所以就看到生产者满了才执行消费者, 消费者读取完队列数据才能执行生产者。
