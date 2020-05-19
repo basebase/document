@@ -382,7 +382,7 @@ public class WaitNotifyReleaseOwnMonitor {
 
 ##### wait/notify/notifyAll常见面试问题
 
-##### 使用wait/notify实现生产消费模型
+###### 使用wait/notify实现生产消费模型
 通过上面几个例子, 大概对wait/notify/notifyAll已经有一定的认识了, 也知道如何去应用了。  
 那么, 我们通过wait/notify来实现一个生产消费者模型, 当我们生产者达到一定的上限后就会阻塞不在生产数据, 当我们的消费者没有数据可消费时候进入阻塞等待生产者生产数据。
 
@@ -481,3 +481,126 @@ synchronized (obj) {
 聪明的你肯定想到啦, 必然是这样啊, synchronized放在最外层, 就算我们的生产者或者消费者唤醒正在阻塞的线程, 但是此时锁是在某一个线程上的, 只有等待持有锁的线程进入阻塞另外一个线程才能获取到锁进而执行。所以就看到生产者满了才执行消费者, 消费者读取完队列数据才能执行生产者。
 
 而synchronized放在for循环内, 如果消费或者生产线程被唤醒, 在进行下一次循环都有机会获取到锁, 就会看到交叉的打印结果集。
+
+
+###### 两个线程交替打印奇偶数
+
+现在有两个线程, 假设A线程输出奇数B线程输出偶数。进行一个交替的输出。  
+如:Thread-A:1,Thread-B:2,hread-A:3,Thread-B:4...
+
+该问题可以用synchronized来解决, 也可以使用wait/notify来解决。两种解决方式wait/notify是对synchronized的完善, 解决synchronized造成的问题。
+
+具体原因已经在代码注释中写入了, 这里不再重复。
+
+
+```java
+/**
+ *      描述:     两个线程交替打印0~100的奇偶数, 使用synchronized来实现
+ */
+public class WaitNotifyPrintOddEvenSync {
+
+    private static int count;
+    private static final Integer SIZE = 100;
+    private static Object obj = new Object();
+
+    public static void main(String[] args) {
+
+        /***
+         *      1. 创简两个线程, 一个输出奇数一个输出偶数
+         *      2. 通过synchronized来完成交替
+         *
+         *      下面的两个线程可以正确的输出奇偶数, 但是有以下问题:
+         *              1. 由于synchronized是在while循环体内的, 所以当结束synchronized代码块线程又可以抢占需要的锁
+         *              2. 哪个线程能抢到锁资源是不确定的, 所以当奇数线程正确输出后应该是偶数线程输出,但是锁却被奇数线程再次抢占
+         *              3. 这就导致线程有很多空操作
+         *
+         */
+
+        // 偶数线程
+        new Thread(() -> {
+            while (count < SIZE) {
+                synchronized (obj) {  // 可能当前是偶数, 但是抢不到锁资源导致无法执行
+                    System.out.println("===================> even");
+                    if (count % 2 == 0) {
+                        System.out.println(Thread.currentThread().getName() + " : " + count);
+                        count ++;
+                    }
+                }
+            }
+        }, "even").start();
+
+        // 奇数线程
+        new Thread(() -> {
+            while (count < SIZE) {
+                synchronized (obj) {
+                    System.out.println("===================> odd");
+                    if (count % 2 == 1) {
+                        System.out.println(Thread.currentThread().getName() + " : " + count);
+                        count ++;
+                    }
+                }
+            }
+        }, "odd").start();
+    }
+}
+```
+
+
+```java
+/**
+ *
+ *      描述:     两个线程交替打印0~100的奇偶数, 使用wait/notify来实现
+ */
+public class WaitNotifyPrintOddEvenWait {
+
+    private static int count;
+    private static final Integer SIZE = 100;
+    private static Object obj = new Object();
+
+    public static void main(String[] args) throws InterruptedException {
+
+        /***
+         *
+         *      1. 两个线程共用同一个任务, 无论哪个线程获取到锁都直接打印出内容。
+         *      2. 打印完后, 唤醒其它线程, 当前线程休眠
+         *
+         *      为什么可以这么做?
+         *          假设count从0开始, 我们偶数线程先行, 打印完后进入休眠, 这样奇数线程就能获取到锁
+         *          然后奇数线程打印完后进入休眠, 接着偶数线程运行...依次运行, 直到count > SIZE结束任务
+         *
+         */
+
+        Runnable runnable = task();
+        /***
+         *  这样的启动方式没问题, 但是有可能会串位, 谁也不知道哪个线程优先执行, 所以要保证正确的话,
+         *  可以使用sleep来阻塞一下下
+         */
+        new Thread(runnable, "even").start();
+        Thread.sleep(100);
+        new Thread(runnable, "odd").start();
+
+    }
+
+    public static Runnable task() {
+        return () -> {
+            while (count < SIZE) {
+                synchronized (obj) {
+                    // 当前线程输出对应的值
+                    System.out.println(Thread.currentThread().getName() + " : " + count++);
+                    // 必须要唤醒上一次等待的线程
+                    obj.notify();
+
+                    // 如果count还小于SIZE就必须进入等待状态, 等待另外一个线程将其唤醒
+                    if (count < SIZE) {
+                        try {
+                            obj.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        };
+    }
+}
+```
