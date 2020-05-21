@@ -604,3 +604,76 @@ public class WaitNotifyPrintOddEvenWait {
     }
 }
 ```
+
+
+###### wait方法为什么需要在synchronized(同步代码块)中使用, 而sleep不需要?
+比如现在有两个线程A和线程B, 我们要求线程A释放锁并且进入阻塞状态, 而线程B去唤醒所有正在等待被唤醒的线程, 我们分别使用start方法启动线程, 假设优先执行了线程A但是还没有执行到wait方法, 而此时切换到了线程B执行notify/notifyAll方法, 这个时候线程A执行到wait方法后, 由于线程B已经执行完了所以线程A会一直处于等待的状态。
+
+而通过synchronized可以有效的避免此类问题的发生, 当线程A执行中并没有释放锁, 线程B是无法执行的, 只有等待线程A释放锁进入等待状态后, 线程B获取到相关锁后才可以执行对应方法。
+
+而sleep是当前线程, 并不需要和其它线程配合使用。所以不需要放在synchronized中。
+
+
+###### wait/notify/notifyAll为什么在Object中?而sleep在Thread中?
+
+1. 在Java中，为了进入临界区代码段，线程需要获得锁并且它们等待锁可用，它们不知道哪些线程持有锁而它们只知道锁是由某个线程保持，它们应该等待锁而不是知道哪个线程在同步块内并要求它们释放锁。 这个比喻适合等待和通知在object类而不是Java中的线程
+
+2. 每个对象都可以作为锁，这是另一个原因wait和notify在Object类中声明，而不是Thread类。
+
+
+###### 使用Thread.wait会怎么样?
+可以用, 但是有一个问题, Thread类比较特殊, 线程在退出的时候会自动执行notif方法, 这样会导致整体逻辑出现问题。
+
+```java
+
+
+/**
+ *      描述:     如果使用Thread类的wait方法, 当线程执行并退出会调用notify/notifyAll方法
+ */
+public class ThreadExitCallBackNotify {
+
+    public static void main(String[] args) {
+
+        Thread lockThread = new Thread(lockThread());
+        Object lock = new Object();
+
+        /***
+         *      一个是不同的Object对象, 一个是Thread实例, 使用Thread线程在退出的时候会调用notify方法
+         */
+        Runnable runnable = taskN1(lockThread);
+//        Runnable runnable = taskN1(lock);
+        Thread t1 = new Thread(runnable);
+        Thread t2 = new Thread(runnable);
+
+        t1.start();
+        t2.start();
+        lockThread.start(); // 但是, 如果线程不调用start方法的话, 依旧和普通的对象锁一样, 不会调用notify方法
+    }
+
+    public static Runnable lockThread() {
+        return () -> {
+            System.out.println("lockThread start ...");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println("lockThread end ...");
+        };
+    }
+
+    public static Runnable taskN1(Object lock) {
+        return () -> {
+            synchronized (lock) {
+                System.out.println(Thread.currentThread().getName() + " start ...");
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println(Thread.currentThread().getName() + " end ...");
+            }
+        };
+    }
+}
+```
