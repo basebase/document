@@ -677,3 +677,87 @@ public class ThreadExitCallBackNotify {
     }
 }
 ```
+
+
+
+##### sleep方法详解
+
+sleep方法可以称得上是我们的老朋友了, 一直在使用。但是对于sleep方法大家又知道多少呢？
+
+sleep的特性:
+  1. 让线程进入阻塞状态, 不占用CPU资源
+  2. 不释放当前线程的锁, 无论是synchronized还是Lock
+
+对于第一点我们不做过多介绍, 当我们调用sleep后, 只要不是拥有锁的线程都会让出当前执行的CPU, 让其它线程可以有机会执行。
+
+而我们重点要介绍的是第二点, sleep不会释放锁, 这一点上和我们的wait()方法有所不同。
+我们通过两个实例来验证。
+
+
+```java
+
+/***
+ *      描述:     展示sleep不释放锁, 等待sleep超时后, 正常退出synchronized代码块才释放锁
+ */
+public class SleepDontReleaseMonitor {
+
+    public static void main(String[] args) {
+        SleepDontReleaseMonitor sleepDontReleaseMonitor = new SleepDontReleaseMonitor();
+        Runnable runnable = sleepDontReleaseMonitor.take();
+
+        /***
+         *      可以看到线程在等待5s后继续执行, 退出synchronized代码块后另外一个线程才能进入synchronized代码块
+         */
+        new Thread(runnable).start();
+        new Thread(runnable).start();
+    }
+
+    public Runnable take() {
+        return () -> {
+            synchronized (this) {
+                System.out.println(Thread.currentThread().getName() + " 获得到锁.");
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println(Thread.currentThread().getName() + " 即将释放锁.");
+            }
+        };
+    }
+}
+```
+
+
+```java
+
+/***
+ *      描述:        演示sleep不释放lock(需要手动释放)
+ */
+
+public class SleepDontReleaseLock {
+    private Lock lock = new ReentrantLock();
+
+    public static void main(String[] args) {
+        SleepDontReleaseLock sleepDontReleaseLock = new SleepDontReleaseLock();
+        Runnable runnable = sleepDontReleaseLock.take();
+        new Thread(runnable).start();
+        new Thread(runnable).start();
+    }
+
+    public Runnable take() {
+        return () -> {
+            try {
+                lock.lock();
+                System.out.println(Thread.currentThread().getName() + " 获得到lock.");
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                System.out.println(Thread.currentThread().getName() + " 释放lock.");
+                lock.unlock(); // 这里如果不手动释放lock另外一个线程永远都是阻塞状态
+            }
+        };
+    }
+}
+```
