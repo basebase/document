@@ -780,3 +780,61 @@ wait/notify和sleep异同?
   * 释放锁(wait会释放锁, sleep不会)
   * 规定时间(sleep必须传入参数, wait可以不需要)
   * 所属类(wait/notify属于Object, sleep属于Thread)
+
+
+
+##### join方法详解
+
+其实说白了就是一个线程等待另外一个线程, 这就是join的功能。
+
+比如我们要让main线程等线程A执行完成之后才执行后续逻辑。在比如说, 我们现在有5条线程初始化资源, 我们需要等待这5个线程初始化完成后再继续执行后续逻辑。
+
+
+###### join方法实践
+
+```java
+
+/***
+ *      描述:     join例子展示
+ */
+public class Join {
+
+    public static void main(String[] args) throws InterruptedException {
+
+        Thread t1 = new Thread(() -> {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println(Thread.currentThread().getName() + " 执行完成");
+        });
+
+        Thread t2 = new Thread(() -> {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println(Thread.currentThread().getName() + " 执行完成");
+        });
+
+        /***
+         *      执行顺序如下:
+         *          1. 首先输出 main 开始执行
+         *          2. 线程0和线程1启动
+         *          3. 等待线程1和线程0执行完成后继续执行main线程后续逻辑
+         */
+
+        System.out.println(Thread.currentThread().getName() + " 开始执行");
+        t1.start();
+        t2.start();
+
+        // 如果我们把t2.join(), t1.join()注释后, 那么输出顺序可能就是main线程全部输出来了, 然后在输出线程0和线程1的内容
+        t2.join();
+        t1.join();
+
+        System.out.println(Thread.currentThread().getName() + " 执行完成");
+    }
+}
+```
