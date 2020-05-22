@@ -684,6 +684,9 @@ public class ThreadExitCallBackNotify {
 
 sleep方法可以称得上是我们的老朋友了, 一直在使用。但是对于sleep方法大家又知道多少呢？
 
+sleep方法可以放线程进入阻塞状态, 并释放CPU资源, 但不释放锁, 直到超出休眠时间后再执行,
+休眠期间如果被中断, 会抛出异常并清除中断状态。
+
 sleep的特性:
   1. 让线程进入阻塞状态, 不占用CPU资源
   2. 不释放当前线程的锁, 无论是synchronized还是Lock
@@ -761,3 +764,19 @@ public class SleepDontReleaseLock {
     }
 }
 ```
+
+
+###### sleep常见面试问题
+
+wait/notify和sleep异同?
+
+相同点如下:
+  * 阻塞
+  * 响应中断
+
+
+不同点如下:
+  * 同步代码块(wait/notify必须在持有锁的情况下调用, 否则抛出异常)
+  * 释放锁(wait会释放锁, sleep不会)
+  * 规定时间(sleep必须传入参数, wait可以不需要)
+  * 所属类(wait/notify属于Object, sleep属于Thread)
