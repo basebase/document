@@ -967,3 +967,48 @@ public class JoinPrinciple {
     }
 }
 ```
+
+
+##### yield方法详解
+
+yield方法作用:
+  * 暂停当前正在执行的线程对象(让出CPU资源), 并执行其它线程。
+
+调用yield()方法时, 线程的状态从执行状态转变为就绪状态(看清楚, 可不是阻塞状态哦)。虽然, 调用yield()方法可以让出CPU资源, 但实际无法保证线程能够让步, 因为让步的线程还有可能被再次选中并执行。
+
+调用yield()让出CPU资源以便其它线程可以执行, 有一定的几率是不成功的(谁也无法保证当前让出的线程, 下次不会再有执行的可能)。
+
+
+下面举个例子, 现在有线程t1和线程t2, 当我们在mian线程中调用yield()方法, 可以看到每次的输出都会不同, 甚至调用yield也没有效果
+
+```java
+
+/***
+ *      描述:     yield方法使用
+ */
+public class Yield {
+    public static void main(String[] args) {
+
+
+        Thread t1 = new Thread(() -> {
+            System.out.println(Thread.currentThread().getName() + " 线程结束");
+        });
+
+        Thread t2 = new Thread(() -> {
+            System.out.println(Thread.currentThread().getName() + " 线程结束");
+        });
+
+        t1.start();
+        t2.start();
+
+        /****
+         *      可以看到即使调用yield, main线程的输出内容也可能会最先出现, 然后是其它子线程的输出
+         */
+
+        Thread.yield();
+        System.out.println(Thread.currentThread().getName() + " 线程退出");
+
+
+    }
+}
+```
