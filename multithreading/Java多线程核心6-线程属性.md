@@ -101,3 +101,62 @@ public class ThreadName {
     }
 }
 ```
+
+
+##### 守护线程以及线程优先级
+
+###### 守护线程
+
+线程一般分两类:
+  * 用户线程
+  * 守护线程
+
+而我们创建的线程默认一般都是用户线程, 如果需要显示的把用户线程转为守护线程需要调用setDaemon()函数。
+
+那么, 守护线程有什么特点?平时写的一些测试程序有守护线程的存在吗?
+
+假设当前我们的程序只有一个main线程以及N个守护线程, 当我们的main线程结束后, 无论这些守护线程有没有运行完毕, JVM都会退出。但是, 如果我们除了main线程还有其余的用户线程还在执行中, 此时JVM不会退出, 而是等待其余的用户线程结束之后, JVM才会退出。
+
+**也就是说守护线程无法影响JVM左右。**
+
+一般我们随便写的任意带有main方法的java类, 都是有守护线程的, 比如我们的垃圾收集器Finalizer等线程。
+
+
+```java
+
+/***
+ *      描述:     设置守护线程晚于main线程之前, 验证用户线程结束守护线程是不是也退出了
+ */
+public class ThreadDaemon {
+    public static void main(String[] args) throws InterruptedException {
+
+
+        Thread daemonThread = new Thread(() -> {
+            int count = 0;
+            while (count++ < 1000) {
+                try {
+                    System.out.println(Thread.currentThread().getName() + " : " + count);
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, "daemonThread");
+
+        /**
+         *      设置线程为守护线程
+         */
+        daemonThread.setDaemon(true);
+        daemonThread.start();
+
+        System.out.println(Thread.currentThread().getName() + " 线程开始等待中...");
+        Thread.sleep(5000);
+
+        /***
+         *     可以看到当main线程结束睡眠的同时, 我们的程序就结束了, 而不在意我们的守护线程有没有执行完毕
+         */
+
+        System.out.println(Thread.currentThread().getName() + " 线程结束了...");
+    }
+}
+```
