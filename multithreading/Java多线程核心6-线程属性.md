@@ -160,3 +160,35 @@ public class ThreadDaemon {
     }
 }
 ```
+
+
+###### 线程优先级
+
+java线程优先级分为1~10, 数字越大代表线程优先级越高。默认创建的线程是5(其实不然。默认的优先级是父线程的优先级。在init方法里有下面一小段代码)。
+
+```java
+
+// Thread.java
+
+private void init(ThreadGroup g, Runnable target, String name,
+                      long stackSize, AccessControlContext acc,
+                      boolean inheritThreadLocals) {
+
+      // ...
+      Thread parent = currentThread();
+      this.priority = parent.getPriority();
+}
+```
+
+或许这么解释是因为Java程序的主线程(main方法)的优先级默认是为NORM_PRIORITY，这样不主动设定优先级的，后续创建的线程的优先级也都是NORM_PRIORITY了。
+
+
+但是, 需要注意的是, 我们的设计不能依赖线程的优先级, 这是因为不同的操作系统优先级会被操作系统改变。具体可以参考这篇文章对比每个系统下的优先级
+
+[什么是Java 线程优先级？](https://www.javamex.com/tutorials/threads/priority_what.shtml)
+
+[java优先级无效](https://stackoverflow.com/questions/12038592/java-thread-priority-has-no-effect)
+
+[线程的优先级](https://www.cnblogs.com/duanxz/p/5226109.html)
+
+对于优先级来说, 不建议去修改, 用默认的优先级即可。所以这里就了解大概的一个意思即可。
