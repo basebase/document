@@ -102,3 +102,75 @@ public class CantCatchDirectly {
 上面两个程序我们都无法直接捕获子线程异常, 可能就会导致子线程会抛出异常信息, 而我们却没有感知到异常的发生, 那么如何处理这种问题呢?
 
 我们可以通过UncaughtExceptionHandler该线程全局异常处理类来进行捕获子线程的异常信息。
+
+
+##### 捕捉子线程异常
+
+在使用UncaughtExceptionHandler类之前呢, 我们还有一种方法捕捉子线程异常, 其实也是我们之前用的, 在每个线程中进行try/catch进行捕获, 这种方式不是特别推荐, 毕竟每个线程都需要进行try/catch, 而且出现什么异常信息也不清楚。
+
+这里不给出具体代码了, 粗略过一下即可.
+
+```java
+public void run() {
+  try {
+    // 业务逻辑
+  } catch (Exception e) {
+    // 线程发生异常时, 一些报警提醒等
+  }
+}
+```
+
+
+使用UncaughtExceptionHandler进行全局异常处理。当发现子线程异常没有被捕获到后, 这个全局异常类会进行处理。
+
+```java
+
+
+/***
+ *      描述:     使用自定义的线程异常处理器
+ */
+
+public class UseOwnUncaughtExceptionHandler {
+
+    public static void main(String[] args) throws InterruptedException {
+
+        /***
+         *       自定义线程异常处理器, 这里使用lambda表达式进行书写
+         */
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+
+            /***
+             *      当线程发生异常时, 就会回调此方法。
+             *      在这个方法里面, 可以做一些处理, 例如对线程的重启, 发送报警短信等等...
+             */
+
+            Logger logger = Logger.getAnonymousLogger();
+            logger.log(Level.WARNING, "线程出现异常, 终止中...", e);
+            System.out.println("捕获线程 " + t.getName() + " 异常 " + e);
+        });
+
+        new Thread(() -> {
+            int i = 1 / 0;
+        }).start();
+
+        new Thread(() -> {
+            int i = 1 / 0;
+        }).start();
+
+        new Thread(() -> {
+            int i = 1 / 0;
+        }).start();
+
+        new Thread(() -> {
+            int i = 1 / 0;
+        }).start();
+
+
+
+        // 虽然main线程还是会继续执行, 但是我们的子线程却会被捕获到, 我们可以感知到子线程发生了异常从而进行处理。
+        for (int i = 0; i < 1000; i++) {
+            System.out.println(i);
+        }
+    }
+}
+```
