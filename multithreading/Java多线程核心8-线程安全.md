@@ -3,7 +3,7 @@
 ##### 什么是线程安全?
 在写这个之前, 我会引用一些我觉得还不错的文章或者书籍等, 然后我们来看看每条引用有什么不同之处。
 
-线程安全的定义, 这里我会引用一些比较权威的定义, 最后我自己会试图总结一下线程安全, 每个人的理解都不同, 但是最终的结果一定是一样的, 我也会给出国外一些线程安全讨论的的帖子(个人觉得浏览或者支持高的一定就是好的, 所以给出链接, 自己思考)。 
+线程安全的定义, 这里我会引用一些比较权威的定义, 最后我自己会试图总结一下线程安全, 每个人的理解都不同, 但是最终的结果一定是一样的, 我也会给出国外一些线程安全讨论的的帖子(个人觉得浏览或者支持高的一定就是好的, 所以给出链接, 自己思考)。
 
 Java并发实战:
   ```text
@@ -24,3 +24,54 @@ Java并发实战:
 [Quora上线程安全的讨论](https://www.quora.com/What-does-the-term-thread-safe-mean-in-Java)
 
 [stackoverflow上线程安全的讨论](https://stackoverflow.com/questions/261683/what-is-the-meaning-of-the-term-thread-safe)
+
+
+
+##### 线程不安全实例
+
+虽然知道了线程安全的定义, 但是在我们的日常开发中还是会出现一些线程不安全的例子,下面我们会给出一些线程不安全的情况, 分析如何导致的线程不安全, 并且给出解决方案。
+
+###### 多个线程运行结果错误
+这是一个比较典型的线程不安全的例子, 该类有一个变量value, 多个线程一起执行value++, 可能会导致最终的结果小于我们的预期结果。
+
+```java
+/***
+ *      描述:     多个线程运行结果出错, 运行后的结果会小于预期结果, 找出问题并解决
+ */
+public class MultiThreadsError {
+
+    static int value = 0;
+    public static void main(String[] args) throws InterruptedException {
+        Runnable r = task();
+        Thread t1 = new Thread(r);
+        Thread t2 = new Thread(r);
+
+        t1.start();
+        t2.start();
+
+        t1.join();
+        t2.join();
+
+        System.out.println("最终的结果为: " + value);
+    }
+
+    public static Runnable task() {
+        return () -> {
+            for (int i = 0; i < 10000; i++) {
+                value ++;
+            }
+        };
+    }
+}
+```
+
+上面的例子中, 可以看到每次运行的结果都不相同。有时候是我们预期的值, 有时候缺少值。这是什么原因导致的呢? 我们先来看看下图:
+
+![多线程累加变量](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E5%A4%9A%E7%BA%BF%E7%A8%8B%E7%B4%AF%E5%8A%A0%E4%B8%80%E4%B8%AA%E5%8F%98%E9%87%8F.png?raw=true)
+
+
+图片中有两个线程A和B, 虽然递增运算value++看上去是一个单个操作, 但事实上包含了三个独立的操作:
+  * 读取value
+  * 将value加1
+  * 将计算结果写入value
+由于运行时间可能将多个线程之间的操作交替执行, 因此这两个线程可能同时执行读操作, 从而使它们得到相同的值, 并都将这个值加1。结果就是, 在不同线程的调用中返回了相同的数值。
