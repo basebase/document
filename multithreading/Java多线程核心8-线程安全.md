@@ -163,3 +163,48 @@ public static Runnable task() {
 这段代码依旧不能对应回去数值, 这是为什么呢?
 
 假设现在的线程1的value进行++后为1, 并且进入了sync代码块, 如果按照我们的想法线程2也是1的话, 就会打印异常信息, 此时线程2进入并进行value++为2, 在次切换回线程1的时候, 此时的value就会为2而不是之前的1了。而线程2进入的时候就会发现value=2的位置已经写入过, 所以要打印异常信息, 本来是没有冲突的数据也变成冲突数据了。
+
+
+**修复3: 既然在value++的时候还是有问题, 那我们干脆就等待value++完成后统一执行吧?**
+
+```java
+public static Runnable task() {
+    return () -> {
+        for (int i = 0; i < 10000; i++) {
+            try {
+                cyclicBarrier2.reset();
+                cyclicBarrier1.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (BrokenBarrierException e) {
+                e.printStackTrace();
+            }
+
+            value ++;
+
+            try {
+                cyclicBarrier1.reset();
+                cyclicBarrier2.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (BrokenBarrierException e) {
+                e.printStackTrace();
+            }
+
+            realCount.incrementAndGet();
+
+            synchronized (lock) {
+                if (marked[value]) {
+                    System.out.println("发生了错误: " + value);
+                    wrongCount.incrementAndGet();
+                }
+                marked[value] = true;
+            }
+        }
+    };
+}
+```
+
+上面的代码依旧存在问题, 我们通过CyclicBarrier1等待两个线程都进入for循环后同时去调用value++来触发问题, 但是, 我们说可能会出现value的篡改, 利用CyclicBarrier2等待两个线程进行完value++后才进行后面的sync代码块。
+
+但是, 由于sync的可见性, 线程1和线程2对value的修改, 可是可以感知的, 这就导致线程出现每次value的值都相同。进而出现一个错误的异常判断。
