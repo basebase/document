@@ -82,12 +82,12 @@ public class MultiThreadsError {
 下面我们会一点一点的去实现这个功能点, 并知道每个修复点会出现的问题。
 
 
-修复1: 我们通过利用一个boolean类型数组记录每次value的值, 如果当前value的值不存在设置为true, 否则就输出异常信息。用来记录在哪个下标位置出现过异常信息。
+**修复1: 我们通过利用一个boolean类型数组记录每次value的值, 如果当前value的值不存在设置为true, 否则就输出异常信息。用来记录在哪个下标位置出现过异常信息。**
 
 为了方便起见, 这里仅贴出重要代码。
 
 ```java
-
+// MultiThreadsErrorMark.java
 public static Runnable task() {
     return () -> {
         for (int i = 0; i < 10000; i++) {
