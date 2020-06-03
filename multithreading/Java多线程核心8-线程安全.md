@@ -125,4 +125,41 @@ public static Runnable task() {
 
 为什么会出现该问题? 又是怎么发生的? 如何解决呢?
 
-修复2:
+```java
+value ++;
+if (marked[value]) {
+    System.out.println("发生了错误: " + value);
+    wrongCount.incrementAndGet(); // 出错次数
+}
+
+marked[value] = true;
+```
+假设线程1和线程2执行完value++后为3, 线程1判断当前位置没有写入进行赋值
+marked[value] = true;但是在还没有完全写入之前, 线程2进入并判断位置3有没有被写入, 由于线程1还没有写入所以线程2依旧会执行marked[value] = true;
+这个时候已经发生了冲突, 但是这里的判断却没有感知到错误。
+
+
+**修复2: 既然上面的问题是多个线程同时执行导致的, 那么我们通过sync来保护这段代码呢?**
+
+```java
+public static Runnable task() {
+    return () -> {
+        for (int i = 0; i < 10000; i++) {
+            value ++;
+            realCount.incrementAndGet();
+
+            synchronized (lock) {
+                if (marked[value]) {
+                    System.out.println("发生了错误: " + value);
+                    wrongCount.incrementAndGet();
+                }
+                marked[value] = true;
+            }
+        }
+    };
+}
+```
+
+这段代码依旧不能对应回去数值, 这是为什么呢?
+
+假设现在的线程1的value进行++后为1, 并且进入了sync代码块, 如果按照我们的想法线程2也是1的话, 就会打印异常信息, 此时线程2进入并进行value++为2, 在次切换回线程1的时候, 此时的value就会为2而不是之前的1了。而线程2进入的时候就会发现value=2的位置已经写入过, 所以要打印异常信息, 本来是没有冲突的数据也变成冲突数据了。
