@@ -207,4 +207,33 @@ public static Runnable task() {
 
 上面的代码依旧存在问题, 我们通过CyclicBarrier1等待两个线程都进入for循环后同时去调用value++来触发问题, 但是, 我们说可能会出现value的篡改, 利用CyclicBarrier2等待两个线程进行完value++后才进行后面的sync代码块。
 
-但是, 由于sync的可见性, 线程1和线程2对value的修改, 可是可以感知的, 这就导致线程出现每次value的值都相同。进而出现一个错误的异常判断。
+但是, 由于sync的可见性, 线程1和线程2对value的修改, 是可以感知的, 这就导致线程出现每次value的值都相同。进而出现一个错误的异常判断。
+
+
+**修复4: 既然正确的累加当成了错误, 如果是正确累加的话都是在偶数位置标记为true, 那我们就判断前一位是否为true, 如果是则出现异常**
+
+```java
+public static Runnable task() {
+    return () -> {
+        marked[0] = true;
+        for (int i = 0; i < 10000; i++) {
+            synchronized (lock) {
+                // 新增加前一个位置的判断
+                if (marked[value] && marked[value - 1]) {
+                    System.out.println("发生了错误: " + value);
+                    wrongCount.incrementAndGet();
+                }
+                marked[value] = true;
+            }
+        }
+    };
+}
+```
+
+运行上面的程序后, 我们可以得到一个正确的数值了, 即: “最终输出结果” + "出错次数" = "总运行次数"。
+
+这里我们主要对前一个标记为进行判断, 如果value累加是正确的话即线程1和线程2加2次,我们会在2的位置标记true, 4的位置标记true, 以此类推...直到结束。
+
+如果标记位置3为true, 则表示这次累加失败丢失了值。
+
+这里还需要注意的是, 数组的第一个位置(下标为0)比较特殊, 需要手动设置为true, 如果第一次两个线程累加就失败的话, 就会在位置2(下标1)进行标记, 如果是正确的就会在位置3(下标2)进行标记。
