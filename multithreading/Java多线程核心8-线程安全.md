@@ -237,3 +237,63 @@ public static Runnable task() {
 如果标记位置3为true, 则表示这次累加失败丢失了值。
 
 这里还需要注意的是, 数组的第一个位置(下标为0)比较特殊, 需要手动设置为true, 如果第一次两个线程累加就失败的话, 就会在位置2(下标1)进行标记, 如果是正确的就会在位置3(下标2)进行标记。
+
+
+
+###### 死锁问题
+
+死锁的概念其实很简单, 比如现在川普有"懂王"的称号, 奥巴马也想拥有但是川普不给, 奥巴马就去获取"建国"的称号, 而川普呢也想要"建国"的称号, 但是奥巴马不给, 两个人对各自的称号都不放手, 就会一直打嘴炮永不停歇。
+
+简单来说, 当两个以上的运算单元，双方都在等待对方停止运行，以获取系统资源，但是没有一方提前退出时，就称为死锁。
+
+
+既然知道了死锁, 那可以实现一个死锁吗? 开玩笑, 这还不简单?!
+
+```java
+
+
+/***
+ *      描述:     线程安全, 死锁问题
+ *               手动写一个一定会死锁的例子
+ */
+public class MultiThreadsDeadLockError {
+    private static Object lock1 = new Object();
+    private static Object lock2 = new Object();
+
+    private static Runnable task1() {
+        return () -> {
+            synchronized (lock1) {
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println(Thread.currentThread().getName() + " 获取到lock1了...");
+                System.out.println(Thread.currentThread().getName() + " 尝试获取lock2...");
+                synchronized (lock2) {
+                    System.out.println(Thread.currentThread().getName() + " 获取到lock2了...");
+                }
+            }
+        };
+    }
+
+    private static Runnable task2() {
+        return () -> {
+            synchronized (lock2) {
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println(Thread.currentThread().getName() + " 获取到lock2了...");
+                System.out.println(Thread.currentThread().getName() + " 尝试获取lock1...");
+                synchronized (lock1) {
+                    System.out.println(Thread.currentThread().getName() + " 获取到lock1了...");
+                }
+            }
+        };
+    }
+}
+```
+
+这个程序呢就会一直阻塞下去, 双方都在等待对方释放资源, 可惜没有谁愿意先释放。
