@@ -297,3 +297,4 @@ public class MultiThreadsDeadLockError {
 ```
 
 这个程序呢就会一直阻塞下去, 双方都在等待对方释放资源, 可惜没有谁愿意先释放。
+对于如何解决这个死锁, 大家可以思考一下如何解决, "notify/notifyAll"。
