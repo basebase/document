@@ -298,3 +298,77 @@ public class MultiThreadsDeadLockError {
 
 这个程序呢就会一直阻塞下去, 双方都在等待对方释放资源, 可惜没有谁愿意先释放。
 对于如何解决这个死锁, 大家可以思考一下如何解决, "notify/notifyAll"。
+
+
+
+##### 对象发布与逸出
+
+什么是对象发布?
+  + **使对象能够在当前作用域之外的代码中调用。**
+
+例如, 将一个指向该对象的引用保存到其它代码可以访问的地方, 或者在某一个非private的方法中返回该引用, 或者将引用传递到其它类的方法中。
+
+我们将这种可以被外部代码访问类为对象的发布。
+
+那什么是逸出呢?
+比如, 我们发布了一个private修饰的对象(例如我们的配置类等), 然而在多个线程中进行了修改会导致最终的配置对象类出现异常, 这种情况称为逸出。
+
+
+###### 发布并逸出例子
+从文字上来看可能比较晦涩, 通过一个简短程序来观察一下, 什么是对象的逸出, 对象逸出的后果有多严重
+
+
+```java
+
+
+/***
+ *      描述:    对象的发布与逸出
+ */
+public class MultiThreadsErrorStates {
+    public static void main(String[] args) {
+        MultiThreadsErrorStatesInner statesInner =
+                new MultiThreadsErrorStatesInner();
+
+        Map<String, String> states = statesInner.getStates();
+
+        /***
+         *  假设现在有两个线程执行先后顺序我们不确定, 它们就有能力去修改这个不应该被发布的map对象
+         *  甚至还可以修改map中存储的对象数据, 以及删除数据。 导致数据不一致等
+         */
+
+        new Thread(() -> {
+            System.out.println(states.get("K1"));
+        }).start();
+
+
+        new Thread(() -> {
+            states.remove("K1");
+        }).start();
+    }
+}
+
+class MultiThreadsErrorStatesInner {
+    // 当前设置一个私有变量map作为我们的配置信息项
+    private Map<String, String> states ;
+
+    /**
+     * 通过构造方法初始化我们的配置项数据
+     */
+    public MultiThreadsErrorStatesInner() {
+        this.states = new HashMap<>();
+        states.put("K1", "赛车手");
+        states.put("A1", "中门对狙");
+        states.put("C4", "炸弹爆炸");
+        states.put("F4", "东北F4");
+    }
+
+    /**
+     * 但是, 我们在一个public修饰的方法中把我们私有变量发布出去了, 可能导致其它类获取到
+     */
+    public Map<String, String> getStates() {
+        return states;
+    }
+}
+```
+
+其实通过这里简短的小例子可以很清除的看到之后会发生哪些问题, 比如配置项被某个线程删除, 配置项被其它线程更新等等。
