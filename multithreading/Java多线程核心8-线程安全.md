@@ -547,11 +547,5 @@ public class MultiThreadsErrorConstruction {
             states.put("F4", "东北F4");
         }).start();
     }
-
-    public static void main(String[] args) {
-        MultiThreadsErrorConstruction multiThreadsErrorConstruction =
-                new MultiThreadsErrorConstruction();
-        System.out.println(multiThreadsErrorConstruction.states.get("F4"));
-    }
 }
 ```
