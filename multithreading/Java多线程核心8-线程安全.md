@@ -549,3 +549,28 @@ public class MultiThreadsErrorConstruction {
     }
 }
 ```
+
+
+##### 如何解决逸出
+
+上面已经演示了好几种对象逸出的例子, 那么对于这些逸出我们如何解决呢?
+
+对于第一种把一个private对象发布出去的逸出, 我们可以通过 **副本** 的方式进行解决。
+
+
+```java
+/***
+ *      描述:    对象的发布与逸出(副本解决private对象逸出)
+ */
+public class MultiThreadsErrorStates2 {
+
+  // ...其余的不复制了, 都一样
+  /***
+   *  通过构造一个副本返回一个新的对象, 这样原有的对象不会被修改,
+   *  每个线程都是获取一个新的对象, 无论是删除还是修改, 丝毫不影响原有的对象
+   */
+  public Map<String, String> getStatesImproved() {
+      return new HashMap<>(states);
+  }
+}
+```
