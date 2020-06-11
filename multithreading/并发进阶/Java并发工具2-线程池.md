@@ -24,6 +24,43 @@
 **我们看到使用线程池可以带来, "减少线程创建所带来的开销"。"分配和取消分配许多线程对象会产生大量内存管理开销"**
 
 
-举个简单的例子, 假设我们现在要创建100个线程, 如果我们通过原始的Thread类构建可以构建, 但是每个线程都是要消耗内存的, 如果有1w个线程呢? 甚至更多很可能就导致OOM了。但是通过线程池我们无需创建这么多线程, 我们可能创建10个线程, 这个10个线程一直一直处理我们的任务, 直到所有的任务执行完成(如果有点不明白, 请参考池化技术中的比喻)。
+**Thread vs ThreadPool**
+
+举个简单的例子, 假设我们现在要创建100个线程, 如果我们通过原始的Thread类构建可以构建, 但是每个线程都是要消耗内存的, 如果有1w个线程呢? 甚至更多很可能就导致OOM了。并且如此之多的线程需要进行上下文的切换也是极其消耗时间的。但是通过线程池我们无需创建这么多线程, 我们可能创建10个线程, 这个10个线程一直一直处理我们的任务,直到所有的任务执行完成。 在此过程中执行相同等级的任务, 使用线程池极大的减少了上下文的切换所花费的时间。
+
+在比如说, 我们现在有1w个线程, 如果要全部终止这些线程呢? 我们只能遍历出每个线程进行中断操作了! 但是使用线程池相关API就可以很方便的关闭线程池并终止线程任务。
+
+可以看到如果我们使用Thread来创建线程会带来下面一些问题:
+  1. 创建N多线程导致难以维护
+  2. 线程的上下文切换
+  3. 创建过多的线程量可能导致OOM
+
+而线程池就很好的解决了上述的问题。
+
+
+**既然说了线程池那么多的好处, 那线程池在存在哪些缺点呢?**
+
+至于缺点每个人可能看点不同, 我更想称为一些注意点, 不过stackoverflow上有人对线程池的缺点讨论过, 我觉得@Solomon Slow用户说的挺对的。
+[Are there any disadvantages of using a thread pool?](https://stackoverflow.com/questions/22663194/are-there-any-disadvantages-of-using-a-thread-pool)
+
+使用线程池, 应该要注意下面几点:
+  * 使用过大的线程池包含太多线程, 这会影响应用程序的性能; 如果线程池太小可能不会带来期望的性能提升。
+
+  * 避免阻塞线程太长时间, 可以指定最大等待时间, 再此之后等待任务被拒绝或重新添加到队列中。
+
+  * 死锁问题
+
+对于死锁问题, 我也看了一些博客下面有人评论说这不是线程池需要注意的问题, 是线程本身需要注意的问题, 其实说到底线程池只是帮助我们管理维护线程, 其本质问题都是线程问题。
+
+**既然使用线程池如此的好, 哪我们为什么还要单独创建线程呢? 都直接使用线程池不是更好?**
+
+这个主要看场景了, 对于有很多需要不断处理的逻辑任务, 并希望并发执行可以使用线程池。但是对于一些临时启动一个线程任务或一些IO相关任务可以创建自己的线程。
+
+[什么时候使用线程池, 基于c#?](https://stackoverflow.com/questions/145304/when-to-use-thread-pool-in-c)
+
 
 [Oracle Java Documentaion pools](https://docs.oracle.com/javase/tutorial/essential/concurrency/pools.html)
+
+[thread-pool-vs-many-individual-threads](https://stackoverflow.com/questions/11700763/thread-pool-vs-many-individual-threads)
+
+[Getting the Most Out of the Java Thread Pool](https://dzone.com/articles/getting-the-most-out-of-the-java-thread-pool)
