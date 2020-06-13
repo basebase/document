@@ -116,7 +116,7 @@ public ThreadPoolExecutor(int corePoolSize,
 **keepAliveTime**  
 如果线程池当前线程超过corePoolSize, 那么多余的线程空闲时间超过keepAliveTime, 就会被终止。
 
-**unit**
+**unit**  
 keepAliveTime的时间单位  
 
 
