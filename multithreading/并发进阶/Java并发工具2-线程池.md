@@ -100,13 +100,28 @@ public ThreadPoolExecutor(int corePoolSize,
 线程池核心线程数, 核心线程不会被回收, 即使没有任务执行, 也会保持空闲状态。线程池在完成初始化后, 默认情况下线程池中没有任何线程, 如果线程池中的线程**小于**核心线程数, 则在执行任务时创建。
 
 **workQueue**  
-当线程超过核心线程数之后, 新的任务就会处在等待状态, 并存在于workQueue中
+当线程超过核心线程数之后, 新的任务就会处在等待状态, 并存在于workQueue中。
+常用workQueue如下:
+  1. SynchronousQueue(直接交接): 这个队列接收到任务的时候，会直接提交给线程处理，而不保留它，如果所有线程都在工作怎么办(使用它一般将maximumPoolSize设置为Integer.MAX_VALUE，即无限大)
+  2. LinkedBlockingQueue(这个无界队列, 如果处理速度赶不上生产速度可能会引发OOM)
+  3. ArrayBlockingQueue(有界队列)
+
 
 **maximumPoolSize**  
 线程池允许最大线程数, 当线程数达到corePoolSize并且workQueue队列也满了之后, 就继续创建线程直到maximumPoolSize数量
 
 **handler**  
 当线程数超过corePoolSize, 且workQueue阻塞队列已满, maximumPoolSize线程也已经超过之后, 执行拒绝策略。
+
+**keepAliveTime**  
+如果线程池当前线程超过corePoolSize, 那么多余的线程空闲时间超过keepAliveTime, 就会被终止。
+
+**unit**
+keepAliveTime的时间单位  
+
+
+**ThreadFactory**  
+创建线程的工厂, 默认使用Executors.defaultThreadFactory(), 创建出来的线程都在同一个线程组, 同样的优先级并且都不是守护线程。当然也可以自己指定ThreadFactory用以改变线程名, 线程组, 优先级等。
 
 
 在了解上面4个参数之后, 我们可以整理出线程池创建线程的规则如下:
