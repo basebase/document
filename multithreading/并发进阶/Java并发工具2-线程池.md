@@ -97,7 +97,7 @@ public ThreadPoolExecutor(int corePoolSize,
 线程池所需要的参数值有7个, 下面就一一介绍每个参数的含义
 
 **corePoolSize**  
-线程池核心线程数, 核心线程不会被回收, 即使没有任务执行, 也会保持空闲状态。如果线程池中的线程**小于**核心线程数, 则在执行任务时创建。
+线程池核心线程数, 核心线程不会被回收, 即使没有任务执行, 也会保持空闲状态。线程池在完成初始化后, 默认情况下线程池中没有任何线程, 如果线程池中的线程**小于**核心线程数, 则在执行任务时创建。
 
 **workQueue**  
 当线程超过核心线程数之后, 新的任务就会处在等待状态, 并存在于workQueue中
@@ -107,3 +107,47 @@ public ThreadPoolExecutor(int corePoolSize,
 
 **handler**  
 当线程数超过corePoolSize, 且workQueue阻塞队列已满, maximumPoolSize线程也已经超过之后, 执行拒绝策略。
+
+
+在了解上面4个参数之后, 我们可以整理出线程池创建线程的规则如下:
+  1. 如果线程数小于corePoolSize, 即使其他工作线程处于空闲状态, 也会**创建**一个新的线程来运行任务。
+
+  2. 如果线程数大于或者等于corePoolSize但少于maximumPoolSize, 则将任务放入队列中
+
+  3. 如果队列也满了, 并且线程数小于maximumPoolSize, 则创建一个新线程来运行任务。
+
+
+  4. 如果队列满了, 并且线程数大于等于maximumPoolSize, 则拒绝该任务。
+
+对于上述流程, 整理如下一张流程图:
+
+![线程池提交任务策略](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%8F%90%E4%BA%A4%E4%BB%BB%E5%8A%A1%E7%AD%96%E7%95%A5.png?raw=true)
+
+从上图中可以知道线程池创建线程规则如下:
+  1. corePoolSize
+  2. workQueue
+  3. maximumPoolSize
+  4. handler
+
+
+有了上述的知识, 我们在回到刚开始提出的问题, 是不是就很清楚了。
+1. 问题1: 4个任务同时进来, 此时会创建4个线程。
+2. 问题2: 如果4个任务没处理完, 新加入2个任务, 会在创建一个线程, 另外一个任务会加入到队列中
+3. 问题3: 如果上述的6个任务都没处理完, 在加入了5个, 把这5个任务加入队列中, 那么此时队列已满, 会使用maximumPoolSize参数在创建一个临时线程处理任务。
+
+
+最后, 我们整理一下线程增减的特点:
+  1. corePoolSize和maximumPoolSize如果相同, 就会创建一个固定大小的线程池(就算队列满了, 也不会在创建线程了。)
+
+  2. 线程池希望保持较少的线程数, 并且只有在负载变得很大时才增加它。
+
+  3. 将maximumPoolSize设置为很高的值, 例如Integer.MAX_VALUE, 就可以允许线程池容纳任意数量的并发任务(假设我们的队列数量是100, 队列满了之后, maximumPoolSize就会创建临时线程处理, 但是由于Integer.MAX_VALUE基本不会饱和, 可能会创建1k-2k甚至更多的临时线程去处理。)
+
+  4. 只有在队列满了之后才会创建多于corePoolSize的线程, 所以如果使用无界队列(例如: LinkedBlockingQueue), 那么线程数就不会超过corePoolSize。(线程池创建线程的规则就是当队列满了之后才创建临时线程, 现在我们的队列永远都不会满所以线程数永远都是核心线程数, 即使设置了maximumPoolSize也是无效的, 这个和我们上面的第3点不一样, 第三点是创建出N多个线程, 而这个无法创建新的线程。)
+
+
+[线程池，这一篇或许就够了](https://liuzho.github.io/2017/04/17/%E7%BA%BF%E7%A8%8B%E6%B1%A0%EF%BC%8C%E8%BF%99%E4%B8%80%E7%AF%87%E6%88%96%E8%AE%B8%E5%B0%B1%E5%A4%9F%E4%BA%86/)
+
+[你都理解创建线程池的参数吗？](http://objcoding.com/2019/04/11/threadpool-initial-parameters/)
+
+[ThreadPoolExecutor — Its behavior with Parameter](https://medium.com/@ashwani.the.tiwari/threadpoolexecutor-its-behavior-with-parameter-5e2979381b65)
