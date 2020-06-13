@@ -166,3 +166,83 @@ keepAliveTime的时间单位
 [你都理解创建线程池的参数吗？](http://objcoding.com/2019/04/11/threadpool-initial-parameters/)
 
 [ThreadPoolExecutor — Its behavior with Parameter](https://medium.com/@ashwani.the.tiwari/threadpoolexecutor-its-behavior-with-parameter-5e2979381b65)
+
+
+
+###### 线程池创建
+线程池的创建有两种方式, 一种是手动创建, 另外一种是自动创建。
+这里的自动创建指的是使用JDK封装好的构造函数, 而手动创建则是我们自己写入上述对应的参数值。
+
+使用手动创建会比自动创建更优, 因为这样可以让我们更加明确线程池运行规则, 避免资源耗尽的风险。
+
+
+现在说手动创建比自动创建要好, 那么自动创建为什么不好呢? 我们先来看看JDK自带的一些创建方法, 看看其中有哪些弊端。
+
+**newFixedThreadPool(固定线程池创建)**
+我们首先来看看newFixedThreadPool这个方法如何创建一个线程池。
+
+```java
+
+/**
+ *      描述:     演示newFixedThreadPool的使用
+ */
+public class FixedThreadPoolTest {
+    public static void main(String[] args) {
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(5);
+        for (int i = 0; i < 100; i++) {
+            executorService.execute(task());
+        }
+    }
+
+    private static Runnable task() {
+        return () -> {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println(Thread.currentThread().getName());
+        };
+    }
+}
+```
+
+我们使用Executors.newFixedThreadPool创建出只有5个线程的线程池。而且输出的线程名字都是1~5之间的, 没有多出来的临时线程?
+
+我们点击进入newFixedThreadPool()方法看看,
+
+```java
+public static ExecutorService newFixedThreadPool(int nThreads) {
+        return new ThreadPoolExecutor(nThreads, nThreads,
+                                      0L, TimeUnit.MILLISECONDS,
+                                      new LinkedBlockingQueue<Runnable>());
+    }
+```
+可以看到newFixedThreadPool传入的corePoolSize和maximumPoolSize是一样大小的, 所有肯定不会有新的线程被创建出来, 并且可以看到keepAliveTime线程活跃时间设置为0秒, 这个是没问题的毕竟都不会新建临时线程, 更本就不需要活跃时间进行销毁临时线程数。
+
+还有一个点就是, newFixedThreadPool()方法传入的workQueue参数是LinkedBlockingQueue(无界队列)这也就意味着, 我们的队列永远不会满, maximumPoolSize也永远不会起作用, 这就会导致刚才我们说的一个问题如果提交任务比消费任务快很多, 任务队列很有可能就会出现OOM。
+
+我们通过下面一个例子展示使用newFixedThreadPool出现OOM错误。
+```java
+/**
+ *      描述:     演示使用newFixedThreadPool出现OOM错误
+ */
+public class FixedThreadPoolOOM {
+    // ...
+    private static Runnable task() {
+        return () -> {
+            try {
+                Thread.sleep(10000000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        };
+    }
+}
+```
+
+这里主要就是把任务的睡眠时间加长, 让线程池中的线程消费速度完全更不上生产速度, 就可以引发OOM了。
+
+在运行的时候, 我们可以把JVM内存调小一点, 方便测试使用。
