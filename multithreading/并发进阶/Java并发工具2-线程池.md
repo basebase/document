@@ -64,3 +64,46 @@
 [thread-pool-vs-many-individual-threads](https://stackoverflow.com/questions/11700763/thread-pool-vs-many-individual-threads)
 
 [Getting the Most Out of the Java Thread Pool](https://dzone.com/articles/getting-the-most-out-of-the-java-thread-pool)
+
+
+##### 线程池创建
+
+在我们创建线程池之前, 我们先来看看线程池中的参数。如果不了解线程池中参数机制, 当我们遇到下面的问题, 可以会有点懵逼哦。
+
+**1. 现有一个线程池, 参数corePoolSize为5, maximnumPoolSize为10, BlockingQueue阻塞队列长度为5, 此时有4个任务同时进来, 线程池会创建几条线程?**
+
+**2. 如果4个任务还没处理完, 这时又同时进来2个任务, 线程池又会创建几条线程还是不会创建?**
+
+**3. 如果前面6个任务还没处理完, 这时又同时进来5个任务, 线程池又会创建几条线程还是不会创建?**
+
+
+如果, 上述的问题觉得没问题的话, 参数介绍就可以直接跨过去了, 如果有点迷糊, 我们就往下学习来解开这层迷雾。
+
+
+###### 线程池参数介绍
+
+我们先将线程池对象的构造方法贴出来, 来看看具体究竟有多少个参数。
+
+```java
+public ThreadPoolExecutor(int corePoolSize,
+                          int maximumPoolSize,
+                          long keepAliveTime,
+                          TimeUnit unit,
+                          BlockingQueue<Runnable> workQueue,
+                          ThreadFactory threadFactory,
+                          RejectedExecutionHandler handler)
+```
+
+线程池所需要的参数值有7个, 下面就一一介绍每个参数的含义
+
+**corePoolSize**  
+线程池核心线程数, 核心线程不会被回收, 即使没有任务执行, 也会保持空闲状态。如果线程池中的线程**小于**核心线程数, 则在执行任务时创建。
+
+**workQueue**  
+当线程超过核心线程数之后, 新的任务就会处在等待状态, 并存在于workQueue中
+
+**maximumPoolSize**  
+线程池允许最大线程数, 当线程数达到corePoolSize并且workQueue队列也满了之后, 就继续创建线程直到maximumPoolSize数量
+
+**handler**  
+当线程数超过corePoolSize, 且workQueue阻塞队列已满, maximumPoolSize线程也已经超过之后, 执行拒绝策略。
