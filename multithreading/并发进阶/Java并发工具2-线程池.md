@@ -367,3 +367,5 @@ public ScheduledThreadPoolExecutor(int corePoolSize) {
 [手把手教你手动创建线程池](https://juejin.im/post/5e58e0a2f265da574f3541cd)
 
 [如何合理地估算线程池大小?](http://ifeve.com/how-to-calculate-threadpool-size/)
+
+不过这也仅仅是一个参考项, 更多的还是需要更具业务以及环境自行去测试得到一个比较好的参数配置。
