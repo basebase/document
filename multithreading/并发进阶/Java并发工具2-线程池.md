@@ -246,3 +246,124 @@ public class FixedThreadPoolOOM {
 这里主要就是把任务的睡眠时间加长, 让线程池中的线程消费速度完全更不上生产速度, 就可以引发OOM了。
 
 在运行的时候, 我们可以把JVM内存调小一点(使用: -Xmx3m -Xms3m), 方便测试。
+
+
+**newSingleThreadExecutor(单一线程池创建)**  
+创建该线程池, 我们甚至连参数都不用传递了, newSingleThreadExecutor直接在底层给我们创建好了。我们先来看看newSingleThreadExecutor的使用。
+
+```java
+
+
+/**
+ *         描述:      newSingleThreadExecutor线程池使用例子
+ */
+public class singleThreadExecutorTest {
+    public static void main(String[] args) {
+        ExecutorService executorService =
+                Executors.newSingleThreadExecutor();
+        for (int i = 0; i < 1000; i++) {
+            executorService.execute(task());
+        }
+    }
+}
+```
+
+task()方法和FixedThreadPoolTest一样都是输出线程名称, 后面的例子都一样, 不在说明。
+
+运行后会发现, 输出的线程名称永远是同一个, 没有其它线程执行。这是为什么呢?
+我们点击newSingleThreadExecutor方法, 看看底层实现原理。
+
+```java
+public static ExecutorService newSingleThreadExecutor() {
+        return new FinalizableDelegatedExecutorService
+            (new ThreadPoolExecutor(1, 1,
+                                    0L, TimeUnit.MILLISECONDS,
+                                    new LinkedBlockingQueue<Runnable>()));
+    }
+```
+
+是不是一目了然, 基本和我们固定线程池原理基本一样, 只不过核心线程和最大线程参数值都是1, 这也就是为什么没有其它线程去执行, 只有一个线程去执行的原因了。
+
+
+**newSingleThreadExecutor(可缓存线程池创建)**  
+该线程池的底层原理和上面两个就有点不同了, 首先该线程池会创建很多线程来处理任务, 并且会在一定时间内进行回收。
+
+那会创建多少个线程? 多长时间回收? 队列是有界还是无界呢?
+
+我们先通过下面的一个实例运行后, 通过底层源码在来进行回答上面的问题。
+
+```java
+
+/**
+ *      描述:     缓存线程池使用
+ */
+public class CachedThreadPoolTest {
+    public static void main(String[] args) {
+        ExecutorService executorService =
+                Executors.newCachedThreadPool();
+        for (int i = 0; i < 1000; i++) {
+            executorService.execute(task());
+        }
+    }
+}
+```
+
+运行输出结果, 发现竟然有很多很多个线程去执行, 这是为什么呢? 我们看看newCachedThreadPool创建方法的原理。
+
+```java
+public static ExecutorService newCachedThreadPool() {
+        return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                                      60L, TimeUnit.SECONDS,
+                                      new SynchronousQueue<Runnable>());
+    }
+```
+
+什么! 核心线程数竟然是0, 也就是说之后的线程都会被回收, 时间是1分钟。而且队列使用的是SynchronousQueue这是一个没有容量的队列, 直接进行交互。所有当我们的任务进来后, 就会创建一个新的线程去执行, 而我们的最大线程数是Integer的最大值几乎不会被创建满格的...
+
+这种没有限制的去创建线程, 如果线程数量非常多也是会出现OOM的。
+
+**newScheduledThreadPool(定时&周期线程池创建)**  
+该线程池比较上面有点特殊, 它可以等待用户指定的时间去执行任务并且可以周期性的去执行任务。
+
+```java
+/**
+ *      描述:     调度线程池使用
+ */
+public class ScheduledThreadPoolTest {
+
+    public static void main(String[] args) {
+        ScheduledExecutorService scheduledExecutorService =
+                Executors.newScheduledThreadPool(5);
+
+        // 1秒之后执行任务
+//        scheduledExecutorService.schedule(task(), 1, TimeUnit.SECONDS);
+
+        // 初始化为1s执行之后, 每次等待3s后再一次执行
+        scheduledExecutorService.scheduleAtFixedRate(task(), 1, 3, TimeUnit.SECONDS);
+    }
+
+    private static Runnable task() {
+        return () -> {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println(Thread.currentThread().getName());
+        };
+    }
+}
+```
+
+这里的任务提交和上面所有的都不同, 是使用schedule来去调度执行的。
+
+我们看一下newScheduledThreadPool实现原理
+
+```java
+public ScheduledThreadPoolExecutor(int corePoolSize) {
+        super(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,
+              new DelayedWorkQueue());
+    }
+```
+
+主要就是看一下DelayedWorkQueue, 进入该队列的任务只有达到了指定的延时时间，才会执行任务。其实这里也可看到最大线程数是Integer的最大值, 依旧可能会引发OOM。
