@@ -356,3 +356,14 @@ public ScheduledThreadPoolExecutor(int corePoolSize) {
 ```
 
 主要就是看一下DelayedWorkQueue, 进入该队列的任务只有达到了指定的延时时间，才会执行任务。其实这里也可看到最大线程数是Integer的最大值, 依旧可能会引发OOM。
+
+
+经过上面的了解, 使用JDK自带的方法去创建线程池可能会导致线上OOM的可能, 所以我们最好手动的去创建线程池来避免此类问题。
+
+并且手动创建线程池, 可以根据业务来设置线程池参数, 设置对应的线程池名称等。
+
+至于如何合理的设置线程池中的线程数, 这一块我引用一些链接吧。毕竟都是大同小异的。主要还是分: 计算密集任务/IO密集任务。
+
+[手把手教你手动创建线程池](https://juejin.im/post/5e58e0a2f265da574f3541cd)
+
+[如何合理地估算线程池大小?](http://ifeve.com/how-to-calculate-threadpool-size/)
