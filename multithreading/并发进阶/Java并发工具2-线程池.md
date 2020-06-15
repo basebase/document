@@ -369,3 +369,72 @@ public ScheduledThreadPoolExecutor(int corePoolSize) {
 [如何合理地估算线程池大小?](http://ifeve.com/how-to-calculate-threadpool-size/)
 
 不过这也仅仅是一个参考项, 更多的还是需要更具业务以及环境自行去测试得到一个比较好的参数配置。
+
+
+##### 线程池停止
+上面既然已经创建出来线程池了, 那也可以停止我们的线程池。(这TM不是废话?)
+停止线程池有两个方法:
+  * shuwdown
+  * shutdownNow
+
+并且还包含三个辅助方法, 用来检查线程池是否停止:
+  * isShutDown
+  * isTerminated
+  * awaitTermination
+
+对于上面这5个方法, 我们会进行一个具体例子演示。
+
+```java
+
+/***
+ *      描述:     线程池关闭
+ */
+public class ShutDown {
+
+    public static void main(String[] args) throws InterruptedException {
+        /***
+         *      既然是演示线程池的关闭, 这里就随意创建一个线程池进行演示.
+         */
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(10);
+
+        for (int i = 0; i < 1000; i++) {
+            executorService.execute(task());
+        }
+        Thread.sleep(1000);
+        System.out.println(executorService.isShutdown());
+        executorService.shutdown();
+        executorService.execute(task());
+        System.out.println(executorService.isShutdown());
+    }
+}
+```java
+
+调用shutdown方法后并不是直接就将线程池关闭, 而是等待正在执行任务和已存储在队列中的任务结束后才会关闭, 在此期间, 新提交的任务不会被接收的, 会抛出异常信息。
+
+再此期间, 可以通过isShutdown方法来判断线程池是否关闭。但是此方法并不知道线程池中的任务是否已经都执行完毕。
+
+
+为此, 我们可以使用isTerminated方法来进行判断。
+
+```java
+System.out.println(executorService.isTerminated());
+Thread.sleep(10000);
+System.out.println(executorService.isTerminated());
+```
+
+可以观察到两次的输出会不一样, 我们在线程池任务没结束之前输出是false, 等待一定时间后, 输出结果为true, 而此时的线程池也已经终止了。
+
+对于awaitTermination方法来说, 它会等待一定时间后去执行。再此期间进入阻塞状态。
+
+```java
+boolean b = executorService.awaitTermination(3, TimeUnit.SECONDS);
+// boolean b = executorService.awaitTermination(10, TimeUnit.SECONDS);
+System.out.println(b);
+```
+
+那么, 还剩下最后的一个方法shutdownNow, 该方法比较暴力了, 直接停止线程池, 中断正在执行的任务, 并返回队列任务集合。
+
+```java
+List<Runnable> runnables = executorService.shutdownNow();
+```
