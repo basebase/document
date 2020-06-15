@@ -408,7 +408,7 @@ public class ShutDown {
         System.out.println(executorService.isShutdown());
     }
 }
-```java
+```
 
 调用shutdown方法后并不是直接就将线程池关闭, 而是等待正在执行任务和已存储在队列中的任务结束后才会关闭, 在此期间, 新提交的任务不会被接收的, 会抛出异常信息。
 
