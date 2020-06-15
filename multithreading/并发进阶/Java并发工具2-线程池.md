@@ -318,7 +318,7 @@ public static ExecutorService newCachedThreadPool() {
     }
 ```
 
-什么! 核心线程数竟然是0, 也就是说之后的线程都会被回收, 时间是1分钟。而且队列使用的是SynchronousQueue这是一个没有容量的队列, 直接进行交互。所有当我们的任务进来后, 就会创建一个新的线程去执行, 而我们的最大线程数是Integer的最大值几乎不会被创建满格的...
+什么! 核心线程数竟然是0, 也就是说之后的线程都会被回收, 时间是1分钟。而且队列使用的是SynchronousQueue这是一个没有容量的队列, 直接进行交互。所以当我们的任务进来后, 就会创建一个新的线程去执行, 而我们的最大线程数是Integer的最大值几乎不会被创建满格的...
 
 这种没有限制的去创建线程, 如果线程数量非常多也是会出现OOM的。
 
@@ -340,17 +340,6 @@ public class ScheduledThreadPoolTest {
 
         // 初始化为1s执行之后, 每次等待3s后再一次执行
         scheduledExecutorService.scheduleAtFixedRate(task(), 1, 3, TimeUnit.SECONDS);
-    }
-
-    private static Runnable task() {
-        return () -> {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            System.out.println(Thread.currentThread().getName());
-        };
     }
 }
 ```
