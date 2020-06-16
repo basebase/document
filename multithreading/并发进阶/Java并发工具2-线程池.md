@@ -626,3 +626,64 @@ public class DiscardOldestPolicyTest {
 ```
 
 观察一下, 我们使用的队列都是有界的, 或者是直接交互的类型。想象一下如果换成无界的队列会是什么后果? 除非你猝死在工位上, 否则没有人知道你很累, 懂了吗😏
+
+
+##### 线程池钩子方法
+对于钩子方法, 这里简单的描述一下什么是钩子方法。更多了解请大家自行搜索。
+
+**钩子方法: 是一个抽象类提供空实现，子类进行选择性重写的方法**
+
+没错, 线程池也给我们提供了一些钩子方法, 提供方法如下:
+  * beforeExecute(线程执行之前)
+  * afterExecute(线程执行结束后)
+  * terminated(线程池结束)
+
+如果我们想在线程执行之前或者之后记录相关日志, 添加一些包装方法等其他公共一些操作, 我们可以实现这几个方法。
+
+```java
+/***
+ *      描述:     线程池钩子方法的使用
+ */
+
+public class HookThreadPool extends ThreadPoolExecutor {
+    @Override
+    protected void beforeExecute(Thread t, Runnable r) {
+        super.beforeExecute(t, r);
+        System.out.println(t.getName() + " 执行之前运行");
+    }
+
+    @Override
+    protected void afterExecute(Runnable r, Throwable t) {
+        super.afterExecute(r, t);
+        System.out.println(Thread.currentThread().getName() + " 执行之后运行");
+    }
+
+    @Override
+    protected void terminated() {
+        super.terminated();
+        System.out.println("线程池结束后执行...");
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        HookThreadPool hookThreadPool =
+                new HookThreadPool(5, 10, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100));
+
+        for (int i = 0; i < 100; i++) {
+            hookThreadPool.execute(() -> {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                System.out.println(Thread.currentThread().getName() + " 开始运行了...");
+            });
+        }
+//        Thread.sleep(5000);
+//        hookThreadPool.shutdown();
+        hookThreadPool.shutdownNow();
+    }
+}
+```
+
+对于钩子方法的使用, 不仅仅就是一个输出这么简单, 可以根据具体业务逻辑来实现, 这里演示主要是让大家了解有这么一个功能。
