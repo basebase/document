@@ -687,3 +687,26 @@ public class HookThreadPool extends ThreadPoolExecutor {
 ```
 
 对于钩子方法的使用, 不仅仅就是一个输出这么简单, 可以根据具体业务逻辑来实现, 这里演示主要是让大家了解有这么一个功能。
+
+
+
+##### 线程池纵览
+最后呢, 我们会把线程池大体架构以及线程池生命周期等功能进行介绍。
+
+###### ThreadPoolExecutor还是Executors还是Executor?
+经过上面的使用, 我们开头介绍了ThreadPoolExecutor相关参数以及基本原理, 但是后期确是使用Executors创建的线程池, 返回的却是ExecutorService类?这些都是什么鬼?
+
+我们先来看一下ThreadPoolExecutor类的关系。
+
+![线程池整体结构](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84.png?raw=true)
+
+明显就可以看到其继承的关系了。这里呢也对这些类做个简单的概括:
+  * Executor是最基础的接口, 其中只包含了execute()方法
+  * ExecutorService继承Executor, 并在其上增加了shutdown,submit等方法扩展。
+
+  * AbstractExecutorService抽象类实现了ExecutorService接口中的大部分方法
+  * TheadPoolExecutor继承了AbstractExecutorService，是线程池的具体实现
+
+其中, 当我们使用周期性的线程池即newScheduledThreadPool返回的是ScheduledExecutorService, 其也是ExecutorService子类。
+
+Executors是线程池的静态工厂，其提供了快捷创建线程池的静态方法。
