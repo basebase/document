@@ -438,3 +438,191 @@ System.out.println(b);
 ```java
 List<Runnable> runnables = executorService.shutdownNow();
 ```
+
+##### 线程池拒绝策略
+无论是人还是机器, 终究还是有极限的。当到达一定的量级时候, 我们就无法处理多出来的任务, 此时就需要拒绝新添加的任务。
+
+对于线程池提供了4种拒绝策略, 分别是:
+  * Abort Policy(抛出异常)
+  * Discard Policy(直接丢弃)
+  * Discard-Oldest Policy(丢弃队列中最老的任务)
+  * Caller-Runs Policy(将任务分给调用线程来执行)
+
+
+下面, 我们会给出每个拒绝策略的具体实现, 当然也可以自定义拒绝策略只需要实现RejectedExecutionHandler接口即可。这块有兴趣的同学自行实现当做练习。
+
+[java-rejectedexecutionhandler](https://www.baeldung.com/java-rejectedexecutionhandler)
+
+```java
+/***
+ *
+ *      描述:     AbortPolicy拒绝策略使用, 抛出异常
+ */
+public class AbortPolicyTest {
+    public static void main(String[] args) {
+        ThreadPoolExecutor threadPoolExecutor =
+                new ThreadPoolExecutor(3, 3, 60, TimeUnit.SECONDS, new SynchronousQueue<>());
+        threadPoolExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+
+        /**
+         *      可以看到, 当线程池处理不过来的时候, 就会抛出java.util.concurrent.RejectedExecutionException异常。
+         *      其实, 线程池默认就是使用此策略...
+         *
+         *      感觉多此一举了...
+         */
+
+        for (int i = 0; i < 100; i++) {
+            int finalI = i;
+            threadPoolExecutor.execute(() -> {
+                System.out.println(Thread.currentThread().getName() + finalI + " run ...");
+            });
+        }
+    }
+}
+```
+
+
+```java
+
+/***
+ *      描述:     CallerRunsPolicy拒绝策略使用, 将任务分给调用线程来执行
+ */
+public class CallerRunsPolicyTest {
+    public static void main(String[] args) throws InterruptedException {
+        ThreadPoolExecutor threadPoolExecutor =
+                new ThreadPoolExecutor(3, 3, 60, TimeUnit.SECONDS, new SynchronousQueue<>());
+        threadPoolExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+
+
+        /***
+         *      可以看到, 这里是由main线程提交的任务, 所以交给main线程来执行
+         */
+        for (int i = 0; i < 100; i++) {
+            threadPoolExecutor.execute(() -> {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                System.out.println(Thread.currentThread().getName() + " 正在执行...");
+            });
+        }
+
+        Thread.sleep(10000);
+
+        /***
+         *      我们创建了一个Thread-A线程提交任务, 就使用Thread-A线程执行任务
+         */
+        new Thread(() -> {
+            for (int i = 0; i < 100; i++) {
+                threadPoolExecutor.execute(() -> {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    System.out.println(Thread.currentThread().getName() + " run...");
+                });
+            }
+
+        }, "Thread-A").start();
+    }
+}
+```
+
+```java
+/***
+ *      描述:     DiscardPolicy拒绝策略使用, 直接丢弃任务
+ */
+public class DiscardPolicyTest {
+    public static void main(String[] args) throws InterruptedException {
+        ThreadPoolExecutor threadPoolExecutor =
+                new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,  new SynchronousQueue<>());
+        threadPoolExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+
+
+        /***
+         *      由于生产任务太多, 消费完全更不上。所以会导致后面任务都被丢弃掉
+         */
+
+        for (int i = 0; i < 10; i++) {
+            threadPoolExecutor.execute(() -> {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                System.out.println(Thread.currentThread().getName() + " run ...");
+            });
+        }
+
+
+        /***
+         *  如果在这里等待一定时间后, 线程池有可以使用的线程了, 下面的queue是可以offer进去的,
+         *  如果线程池中的所有线程还在执行任务, 这个任务依旧是没有执行的机会, 队列为空
+         */
+        Thread.sleep(3000);
+
+        BlockingQueue<String> queue = new LinkedBlockingDeque<>();
+        threadPoolExecutor.execute(() -> {
+            queue.offer("Discarded Result");
+            System.out.println("Go...");
+        });
+
+        // 这里也需要等待一定时间, 线程池线程不一定offer进去了, 等待后, 程序正常可以看到队列长度是1
+        Thread.sleep(1000);
+        System.out.println("thread addWork queue size : " + queue.size());
+    }
+}
+```
+
+
+```java
+/***
+ *      描述:     DiscardOldestPolicy拒绝策略使用, 丢弃队列中最老的任务
+ */
+public class DiscardOldestPolicyTest {
+
+    public static void main(String[] args) throws InterruptedException {
+        ThreadPoolExecutor threadPoolExecutor =
+                new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,  new ArrayBlockingQueue<>(2));
+        threadPoolExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
+
+
+        /***
+         *      现在我们的任务队列大小为2, 有一个核心线程执行。我们需要添加4个任务去执行, 会有下面的情况发生:
+         *          1. 第一个任务将单线程占据500毫秒
+         *          2. 执行程序成功地将第二个和第三个任务排队
+         *          3. 当第四个任务到达时，丢弃最旧的策略将删除最早的任务，以便为新任务腾出空间
+         *
+         *          所以, 下面的queue只会有[Second, Third], 而First是最早提交的, 所以被移除了。
+         *
+         *          注意:
+         *              丢弃最早的策略和优先级队列不能很好地配合使用。
+         *              因为优先级队列的头具有最高优先级，所以我们可能会简单地失去最重要的任务。
+         */
+
+        threadPoolExecutor.execute(() -> {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+
+        BlockingQueue<String> queue = new LinkedBlockingDeque<>();
+        threadPoolExecutor.execute(() -> queue.offer("First"));
+        threadPoolExecutor.execute(() -> queue.offer("Second"));
+        threadPoolExecutor.execute(() -> queue.offer("Third"));
+
+        Thread.sleep(1000);
+        System.out.println(queue);
+
+    }
+}
+```
+
+观察一下, 我们使用的队列都是有界的, 或者是直接交互的类型。想象一下如果换成无界的队列会是什么后果? 除非你猝死在工位上, 否则没有人知道你很累, 懂了吗😏
