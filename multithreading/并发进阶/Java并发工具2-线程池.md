@@ -796,10 +796,9 @@ private boolean addWorker(Runnable firstTask, boolean core) {
 }
 ```
 
-这里的addWorker就是添加一个线程任务, 而且我们也看到会启动一个线程任务。也就是我们提交上来的任务。
+addWorker()方法前置一些判断, 我们并不关心, 我们只关注当前展示这部分, 通过addWorker()方法会启动一个线程任务, 并将Worker任务添加至HashSet中。
 
-
-我们来看看Worker类, 它实现了Runnable接口, 也是一个工作线程。所以当addWorker()方法调用了start()方法时, 会运行期run()方法, run()方法中就是调用runWorker()方法。
+由于在addWorker()方法中, 线程会被启动。而启动的线程就是Worker类包装后的任务,所以我们来看看Worker类, 它实现了Runnable接口, 也是一个工作线程。所以当addWorker()方法调用了start()方法时, 会执行Worker类的run()方法, run()方法中就是调用runWorker()方法。
 
 ```java
 final void runWorker(Worker w) {
@@ -847,13 +846,22 @@ final void runWorker(Worker w) {
     }
 }
 ```
+runWorker()方法执行逻辑:
+  1. 使用一个变量获取当前提交的任务判断是否为空, 如果不为空执行firstTask, 之后置为空;
 
-可以看到runWorker()方法中, 通过判断是否还有任务, 如果有就会一直去调用任务的run方法。
+  2. firstTask为空后调用getTask()方法从队列中获取任务执行;
 
-通过这里的死循环, 就实现了使用相同的线程去处理不同的任务。并反复执行新的任务。
+  3. 一直循环执行任务, 直到没有可执行任务, 退出while循环;
+
+所以, 通过这里的循环不断去判断还有没有任务没有被执行, 如果有, 就会一直利用已有的线程去处理我们提交的任务, 等到队列中的任务全部被执行完后, 退出循环。
+
+这样就实现使用相同的线程去处理不同的任务, 反复执行新任务。从而达到复用的条件。
 
 想详细了解, 可以参考这篇文章
+
 [Java线程池ThreadPoolExecutor源码分析](https://fangjian0423.github.io/2016/03/22/java-threadpool-analysis/)
+
+[彻底弄懂 Java 线程池原理](https://juejin.im/post/5c33400c6fb9a049fe35503b)
 
 ###### 线程池生命周期
 线程有生命周期, 线程池自然也有自己的生命周期, 线程池的状态又有多少种? 又是如何转换的?
