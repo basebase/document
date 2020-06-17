@@ -848,7 +848,9 @@ final void runWorker(Worker w) {
 }
 ```
 
-可以看到runWorker()方法中, 通过判断是否还有任务, 如果有就会一直去调用任务的run方法, 新提交的任务通过addWorker()方法中的workers这个HashSet去保存。
+可以看到runWorker()方法中, 通过判断是否还有任务, 如果有就会一直去调用任务的run方法。
+
+通过这里的死循环, 就实现了使用相同的线程去处理不同的任务。并反复执行新的任务。
 
 想详细了解, 可以参考这篇文章
 [Java线程池ThreadPoolExecutor源码分析](https://fangjian0423.github.io/2016/03/22/java-threadpool-analysis/)
