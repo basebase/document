@@ -710,3 +710,34 @@ public class HookThreadPool extends ThreadPoolExecutor {
 其中, 当我们使用周期性的线程池即newScheduledThreadPool返回的是ScheduledExecutorService, 其也是ExecutorService子类。
 
 Executors是线程池的静态工厂，其提供了快捷创建线程池的静态方法。
+
+###### 线程池生命周期
+线程有生命周期, 线程池自然也有自己的生命周期, 线程池的状态又有多少种? 又是如何转换的?
+
+
+我们先进入ThreadPoolExecutor类的源码来看看有哪些状态
+```java
+private static final int RUNNING    = -1 << COUNT_BITS;
+private static final int SHUTDOWN   =  0 << COUNT_BITS;
+private static final int STOP       =  1 << COUNT_BITS;
+private static final int TIDYING    =  2 << COUNT_BITS;
+private static final int TERMINATED =  3 << COUNT_BITS;
+```
+
+线程池有五种状态, 分别对应如下:
+  * RUNNING: 接收新的任务并处理队列中的任务
+  * SHUTDOWN: 不接收新的任务，但是处理队列中的任务
+  * STOP: 不接收新的任务，不处理队列中的任务，同时中断处理中的任务
+  * TIDYING: 所有的任务处理完成，有效的线程数是0
+  * TERMINATED: terminated()方法执行完毕
+
+
+通过下图, 我们来看一下线程池状态的一个转换过程
+
+![线程池状态](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E7%BA%BF%E7%A8%8B%E6%B1%A0%E7%8A%B6%E6%80%81.png?raw=true)
+
+[Java线程池的5种状态](https://blog.csdn.net/GoGleTech/article/details/79728522)
+
+[Java线程池ThreadPoolExecutor使用和分析(一)](https://www.cnblogs.com/trust-freedom/p/6681948.html)
+
+[Java线程池ThreadPoolExecutor使用和分析(二) - execute()原理](https://www.cnblogs.com/trust-freedom/p/6681948.html)
