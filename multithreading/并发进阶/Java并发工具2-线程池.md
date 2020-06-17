@@ -722,6 +722,137 @@ public class HookThreadPool extends ThreadPoolExecutor {
 
 Executors是线程池的静态工厂，其提供了快捷创建线程池的静态方法。
 
+###### 线程池实现任务复用
+线程池是如何让线程不停歇的处理我们的提交的任务, 线程池的线程不也是线程吗?
+难道不会终止吗?
+
+带着疑问, 我们主要看一看ThreadPoolExecutor类下的addWorker()方法和其私有子类Worker类下的runWorker()方法。
+
+当我们在执行execute()方法时候, 会进入下面代码段
+```java
+public void execute(Runnable command) {
+    if (command == null)
+        throw new NullPointerException();
+    int c = ctl.get();
+    if (workerCountOf(c) < corePoolSize) {
+        if (addWorker(command, true))
+            return;
+        c = ctl.get();
+    }
+    if (isRunning(c) && workQueue.offer(command)) {
+        int recheck = ctl.get();
+        if (! isRunning(recheck) && remove(command))
+            reject(command);
+        else if (workerCountOf(recheck) == 0)
+            addWorker(null, false);
+    }
+    else if (!addWorker(command, false))
+        reject(command);
+}
+```
+
+我们不用关注其它判断, 这些是线程池我们最开始说的参数判断, 我们只关注addWorker()方法。
+
+```java
+private boolean addWorker(Runnable firstTask, boolean core) {
+  // ....
+
+  boolean workerStarted = false;
+  boolean workerAdded = false;
+  Worker w = null;
+  try {
+      w = new Worker(firstTask);
+      final Thread t = w.thread;
+      if (t != null) {
+          final ReentrantLock mainLock = this.mainLock;
+          mainLock.lock();
+          try {
+              int rs = runStateOf(ctl.get());
+
+              if (rs < SHUTDOWN ||
+                  (rs == SHUTDOWN && firstTask == null)) {
+                  if (t.isAlive()) // precheck that t is startable
+                      throw new IllegalThreadStateException();
+                  workers.add(w);
+                  int s = workers.size();
+                  if (s > largestPoolSize)
+                      largestPoolSize = s;
+                  workerAdded = true;
+              }
+          } finally {
+              mainLock.unlock();
+          }
+          if (workerAdded) {
+              // 启动我们的线程
+              t.start();
+              workerStarted = true;
+          }
+      }
+  } finally {
+      if (! workerStarted)
+          addWorkerFailed(w);
+  }
+  return workerStarted;
+}
+```
+
+这里的addWorker就是添加一个线程任务, 而且我们也看到会启动一个线程任务。也就是我们提交上来的任务。
+
+
+我们来看看Worker类, 它实现了Runnable接口, 也是一个工作线程。所以当addWorker()方法调用了start()方法时, 会运行期run()方法, run()方法中就是调用runWorker()方法。
+
+```java
+final void runWorker(Worker w) {
+    Thread wt = Thread.currentThread();
+    Runnable task = w.firstTask;
+    w.firstTask = null;
+    w.unlock(); // allow interrupts
+    boolean completedAbruptly = true;
+    try {
+        /*
+          这里之所以可以重复执行正式因为此循环, 不断去检测有没有任务,
+          如果worker中的任务不为空，继续执行，否则使用getTask获得任务。一直死循环，除非得到的任务为空才退出
+        */
+        while (task != null || (task = getTask()) != null) {
+            w.lock();
+            if ((runStateAtLeast(ctl.get(), STOP) ||
+                 (Thread.interrupted() &&
+                  runStateAtLeast(ctl.get(), STOP))) &&
+                !wt.isInterrupted())
+                wt.interrupt();
+            try {
+                beforeExecute(wt, task);
+                Throwable thrown = null;
+                try {
+                    // 这里就会调用我们任务的run方法, 就和调用普通方法一样
+                    task.run();
+                } catch (RuntimeException x) {
+                    thrown = x; throw x;
+                } catch (Error x) {
+                    thrown = x; throw x;
+                } catch (Throwable x) {
+                    thrown = x; throw new Error(x);
+                } finally {
+                    afterExecute(task, thrown);
+                }
+            } finally {
+                task = null;
+                w.completedTasks++;
+                w.unlock();
+            }
+        }
+        completedAbruptly = false;
+    } finally {
+        processWorkerExit(w, completedAbruptly);
+    }
+}
+```
+
+可以看到runWorker()方法中, 通过判断是否还有任务, 如果有就会一直去调用任务的run方法, 新提交的任务通过addWorker()方法中的workers这个HashSet去保存。
+
+想详细了解, 可以参考这篇文章
+[Java线程池ThreadPoolExecutor源码分析](https://fangjian0423.github.io/2016/03/22/java-threadpool-analysis/)
+
 ###### 线程池生命周期
 线程有生命周期, 线程池自然也有自己的生命周期, 线程池的状态又有多少种? 又是如何转换的?
 
