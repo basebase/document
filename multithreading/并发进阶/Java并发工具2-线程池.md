@@ -738,6 +738,6 @@ private static final int TERMINATED =  3 << COUNT_BITS;
 
 [Java线程池的5种状态](https://blog.csdn.net/GoGleTech/article/details/79728522)
 
-[Java线程池ThreadPoolExecutor使用和分析(一)](https://www.cnblogs.com/trust-freedom/p/6681948.html)
+[Java线程池ThreadPoolExecutor使用和分析(一)](https://www.cnblogs.com/trust-freedom/p/6594270.html)
 
 [Java线程池ThreadPoolExecutor使用和分析(二) - execute()原理](https://www.cnblogs.com/trust-freedom/p/6681948.html)
