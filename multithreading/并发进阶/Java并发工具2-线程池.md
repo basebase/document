@@ -285,7 +285,7 @@ public static ExecutorService newSingleThreadExecutor() {
 是不是一目了然, 基本和我们固定线程池原理基本一样, 只不过核心线程和最大线程参数值都是1, 这也就是为什么没有其它线程去执行, 只有一个线程去执行的原因了。
 
 
-**newSingleThreadExecutor(可缓存线程池创建)**  
+**newCachedThreadPool(可缓存线程池创建)**  
 该线程池的底层原理和上面两个就有点不同了, 首先该线程池会创建很多线程来处理任务, 并且会在一定时间内进行回收。
 
 那会创建多少个线程? 多长时间回收? 队列是有界还是无界呢?
