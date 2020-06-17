@@ -693,6 +693,17 @@ public class HookThreadPool extends ThreadPoolExecutor {
 ##### 线程池纵览
 最后呢, 我们会把线程池大体架构以及线程池生命周期等功能进行介绍。
 
+###### 线程池组成部分
+线程池由一下四个部分组成:
+  * 线程池管理器
+    * 用于创建并管理线程池, 包括创建线程池, 销毁线程池, 添加任务等;(Thread-Pool)
+  * 工作线程
+    * 线程池中的线程, 在没有任务时处于等待状态, 可以循环执行任务;(Thread)
+  * 任务队列
+    * 用于存放没有处理的任务; (Blocking Queue)
+  * 任务接口
+    * 每个任务必须实现的接口, 以供工作线程调度任务并执行; (task, 实现Runnable接口的task)
+
 ###### ThreadPoolExecutor还是Executors还是Executor?
 经过上面的使用, 我们开头介绍了ThreadPoolExecutor相关参数以及基本原理, 但是后期确是使用Executors创建的线程池, 返回的却是ExecutorService类?这些都是什么鬼?
 
