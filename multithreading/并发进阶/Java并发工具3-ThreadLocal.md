@@ -59,3 +59,9 @@ ThreadLocal是解决线程安全的一种方法, 但是它没有解决同步的�
 
 
 虽然ThreadLocal为线程安全开辟了新的道路, 但是不要误解ThreadLocal是Synchronization的替代方案, 它全部取决于设计, 如果对象允许每个线程拥有自己的对象副本, 则可以使用。
+
+概念性可参考:
+
+[ThreadLocal vs Synchronization](https://ranksheet.com/Solutions/kb-Core-Java/1774_ThreadLocal-vs-Synchronization.aspx)
+
+[how-to-use-threadlocal-in-java-benefits](https://javarevisited.blogspot.com/2012/05/how-to-use-threadlocal-in-java-benefits.html#ixzz2Q4g8xqea)
