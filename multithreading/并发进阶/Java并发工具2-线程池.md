@@ -893,3 +893,5 @@ private static final int TERMINATED =  3 << COUNT_BITS;
 [Java线程池ThreadPoolExecutor使用和分析(一)](https://www.cnblogs.com/trust-freedom/p/6594270.html)
 
 [Java线程池ThreadPoolExecutor使用和分析(二) - execute()原理](https://www.cnblogs.com/trust-freedom/p/6681948.html)
+
+[线程池面试专题](https://juejin.im/post/5b3cf259e51d45194e0b7204#heading-2)
