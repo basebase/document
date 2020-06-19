@@ -65,3 +65,187 @@ ThreadLocal是解决线程安全的一种方法, 但是它没有解决同步的�
 [ThreadLocal vs Synchronization](https://ranksheet.com/Solutions/kb-Core-Java/1774_ThreadLocal-vs-Synchronization.aspx)
 
 [how-to-use-threadlocal-in-java-benefits](https://javarevisited.blogspot.com/2012/05/how-to-use-threadlocal-in-java-benefits.html#ixzz2Q4g8xqea)
+
+
+##### ThreadLocal应用实例
+上面, 我们已经了解到ThreadLocal特性, 以及应用场景, 下面会使用一些具体例子作为一个展示。
+
+###### ThreadLocal SimpleDateFormat例子
+在多线程的环境下使用SimpleDateFormat可能会出现异常, 这是因为SimpleDateFormat不是一个线程安全的类。
+
+在展示ThreadLocal之前, 我们通过一些简单的小例子来发现SimpleDateFormat为什么不安全。
+
+```java
+/***
+ *      描述:     通过线程池创建N多个线程打印出指定的时间
+ */
+
+public class ThreadLocalSimpleDateFormatTest01 {
+
+    public String date(int seconds) {
+        Date date = new Date(1000 * seconds);
+        SimpleDateFormat dateFormat =
+                new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+        return dateFormat.format(date);
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(10);
+        for (int i = 0; i < 1000; i++) {
+            int finalI = i;
+            executorService.execute(() -> {
+                String date =
+                        new ThreadLocalSimpleDateFormatTest01().date(finalI);
+                System.out.println(date);
+            });
+        }
+        executorService.shutdown();
+    }
+}
+```
+
+该例子不会引发线程错误问题, 每个线程都创建了各自的SimpleDateFormat对象, 所以不会干扰其它线程, 但是, 我们不可能每提交一个任务就创建一个SimpleDateFormat对象吧? 假设有100w的任务呢? 甚至更多呢? 内存岂不是要爆炸了!?
+
+那好, 既然你不让我创建这么多对象, 那我就只创建一个SimpleDateFormat对象实例, 大家一起共同使用我。
+
+```java
+/***
+ *      描述:     多个线程共同使用SimpleDateFormat对象, 引发数据错误
+ */
+public class ThreadLocalSimpleDateFormatTest02 {
+
+    /***
+     *  注意这里一定要使用static, 在使用线程池提交任务的时候, 我们每次都是new出ThreadLocalSimpleDateFormatTest02对象的
+     *  这还是会导致每个线程都是独立的SimpleDateFormat对象。
+     */
+    private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+
+    public String date(int seconds) {
+        Date date = new Date(1000 * seconds);
+        return dateFormat.format(date);
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(10);
+        for (int i = 0; i < 1000; i++) {
+            int finalI = i;
+            executorService.execute(() -> {
+                String date =
+                        new ThreadLocalSimpleDateFormatTest02().date(finalI);
+                System.out.println(date);
+            });
+
+        }
+
+        executorService.shutdown();
+    }
+}
+```
+
+当多个线程共享同一个SimpleDateFormat对象实例的时候, 问题就出现了, 我们打印出来的日期数据竟然出现重复值了, 这明显是线程不安全的。
+
+既然问题出现了, 如何解决呢?
+
+**方法一: 使用synchronized**
+```java
+/***
+ *      描述:     多个线程共同使用SimpleDateFormat对象, 使用synchronized解决数据错误问题
+ */
+public class ThreadLocalSimpleDateFormatTest03 {
+    private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+    private static HashSet<String> hashSet = new HashSet();
+
+    public String date(int seconds) {
+        Date date = new Date(1000 * seconds);
+
+        /***
+         *      由于出错的点是在格式化的时候, 所以我们对dateFormat.format进行加锁保护
+         */
+        String format = null;
+        synchronized (ThreadLocalSimpleDateFormatTest03.class) {
+            format = dateFormat.format(date);
+            if (!hashSet.add(format))
+                throw new IllegalArgumentException("出现重复值了...");
+        }
+        return format;
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(10);
+
+        for (int i = 0; i < 1000; i++) {
+            int finalI = i;
+            executorService.execute(() -> {
+                String date =
+                        new ThreadLocalSimpleDateFormatTest03().date(finalI);
+                System.out.println(date);
+            });
+
+        }
+        executorService.shutdown();
+    }
+}
+```
+
+程序没有抛出异常信息, 已经解决了共享同一个SimpleDateFormat对象实例引发的线程不安全问题, 但是使用synchronized会导致其它线程等待另外一个线程释放锁, 这就会浪费很多时间在等待锁上面了, 加锁虽然可以解决, 但并不是最优的解决方法。
+
+
+**方法二: 使用ThreadLocal(推荐)**
+
+```java
+
+/***
+ *      描述:     多个线程共同使用SimpleDateFormat对象, 使用ThreadLocal解决数据错误问题
+ */
+public class ThreadLocalSimpleDateFormatTest04 {
+
+    private static ThreadLocal<SimpleDateFormat> threadLocal = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd hh:mm:ss"));
+
+    private static HashSet<String> hashSet = new HashSet();
+
+    public String date(int seconds) {
+        Date date = new Date(1000 * seconds);
+        String format = null;
+        SimpleDateFormat dateFormat = threadLocal.get();
+        System.out.println(dateFormat);
+        format = dateFormat.format(date);
+        if (!hashSet.add(format))
+            throw new IllegalArgumentException("出现重复值了...");
+        return format;
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(10);
+        for (int i = 0; i < 1000; i++) {
+            int finalI = i;
+            executorService.execute(() -> {
+                String date =
+                        new ThreadLocalSimpleDateFormatTest04().date(finalI);
+                System.out.println(date);
+            });
+
+        }
+
+        executorService.shutdown();
+    }
+}
+```
+
+使用ThreadLocal后, 每个线程中都持有对SimpleDateFormat对象的副本, 解决了多个线程下使用同一个SimpleDateFormat对象实例带来的线程安全问题, 并且各个线程之间还无需等待对方释放锁, 大大的提升了程序的性能。
+
+
+至此, SimpleDateFormat可以在多线程环境下安全的运行, 回顾一下最初的一些操作:
+  1. 使用线程池来执行线程任务, 但是每次都是创建新的SimpleDateFormat对象, 内存消耗太大。
+
+  2. 既然每个线程都要使用SimpleDateFormat对象, 那么对个线程共享同一个SimpleDateFormat对象实例, 但这引发了数据不安全。
+
+  3. 为了解决共享同一个实例对象引发的线程不安全, 使用synchronized来解决该问题, 但是在高并发的场景下, 这种需要等待锁释放锁的情况极大的消耗资源, 并不是推荐使用的。
+
+  4. 最后利用ThreadLocal来解决线程安全问题并解决了锁带来的性能问题, 同时每个线程内部都有自己SimpleDateFormat对象副本, 不同线程之间无法干扰对方。
