@@ -262,7 +262,7 @@ public class ThreadLocalSimpleDateFormatTest04 {
 ![ThreadLocal传递参数一](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/ThreadLocal%E4%BC%A0%E9%80%92%E5%8F%82%E6%95%B0%E4%B8%80.png?raw=true)
 
 
-既然都要使用用户信息, 那我们设置为一个静态的用户信息变量来接收不就行了? 这可定是不行的, 每一个请求都是不同用户发出来的, 如果用户A下单, 用户B退单, 结果是A用户退单了, 毕竟是一个静态用户对象。所以完全不可行。
+既然都要使用用户信息, 那我们设置为一个静态的用户信息变量来接收不就行了? 这肯定是不行的, 每一个请求都是不同用户发出来的, 如果用户A下单, 用户B退单, 结果是A用户退单了, 毕竟是一个静态用户对象。所以完全不可行。
 
 既然如此, 那我使用一个Map结构来保存所有用户信息呢, 不就可以解决了, 需要注意的是, 如果使用Map结构来保存用户信息, 由于是多线程环境下肯定会有线程安全问题, 所以我们需要使用synchronized或者ConcurrentHashMap这种线程安全的map来保存用户信息, 无论是加锁还是ConcurrentHashMap都会对性能有所影响, 线程需要等待。如下图, 使用一个线程安全的map结构来存储
 
