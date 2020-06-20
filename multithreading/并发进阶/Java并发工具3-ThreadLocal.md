@@ -249,3 +249,93 @@ public class ThreadLocalSimpleDateFormatTest04 {
   3. 为了解决共享同一个实例对象引发的线程不安全, 使用synchronized来解决该问题, 但是在高并发的场景下, 这种需要等待锁释放锁的情况极大的消耗资源, 并不是推荐使用的。
 
   4. 最后利用ThreadLocal来解决线程安全问题并解决了锁带来的性能问题, 同时每个线程内部都有自己SimpleDateFormat对象副本, 不同线程之间无法干扰对方。
+
+
+
+
+###### 使用ThreadLocal传递参数
+
+通常, 我们的web服务应用可能会使用用户信息, 而我们要将用户信息传递给另外一个方法(比如查询积分), 然后通过这个方法在传递给另外一个方法(比如下订单), 然后该方法又调用另外一个方法(比如取消订单)。等等一系列依赖用户信息的参数方法调用。
+
+如果我们在每个方法中都去传递这个用户信息, 不仅代码冗余而且也不容易维护等等。如下图, 可以看到每次调用方法都要传递Session对象
+
+![ThreadLocal传递参数一](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/ThreadLocal%E4%BC%A0%E9%80%92%E5%8F%82%E6%95%B0%E4%B8%80.png?raw=true)
+
+
+既然都要使用用户信息, 那我们设置为一个静态的用户信息变量来接收不就行了? 这可定是不行的, 每一个请求都是不同用户发出来的, 如果用户A下单, 用户B退单, 结果是A用户退单了, 毕竟是一个静态用户对象。所以完全不可行。
+
+既然如此, 那我使用一个Map结构来保存所有用户信息呢, 不就可以解决了, 需要注意的是, 如果使用Map结构来保存用户信息, 由于是多线程环境下肯定会有线程安全问题, 所以我们需要使用synchronized或者ConcurrentHashMap这种线程安全的map来保存用户信息, 无论是加锁还是ConcurrentHashMap都会对性能有所影响, 线程需要等待。如下图, 使用一个线程安全的map结构来存储
+
+![ThreadLocal传递参数二](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/ThreadLocal%E4%BC%A0%E9%80%92%E5%8F%82%E6%95%B0%E4%BA%8C.png?raw=true)
+
+
+我们想一下, 既然每个线程都需要一个独立的对象进行操作, 我们完全可以使用ThreadLocal来解决啊, 让每个线程都持有一个Session对象, 这样既避免加锁带来的 性能问题, 也解决参数传递带来的冗余操作等。
+
+![ThreadLocal传递参数三](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/ThreadLocal%E4%BC%A0%E9%80%92%E5%8F%82%E6%95%B0%E4%B8%89.png?raw=true)
+
+
+有了上面的铺垫, 我们可以通过一个具体的例子来实现这样的功能需求了。
+
+```java
+/***
+ *      描述:     通过ThreadLocal解决传递用户Session信息
+ */
+public class ThreadLocalSessionTest {
+
+    /***
+     *      这里, 我们的threadlocal不在实现任何方法, 但是可以看到下面使用的threadlocal的set方法来设置对象信息。
+     */
+    public static ThreadLocal<Session> threadLocal = new ThreadLocal();
+    public static HashSet<String> hashSet = new HashSet<>();
+
+    public static void main(String[] args) throws InterruptedException {
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(10);
+        for (int i = 0; i < 100; i++) {
+            final String USER_NAME = "USER-" + i;
+            executorService.execute( () -> {
+                new Service1().process(USER_NAME);
+            });
+        }
+
+        executorService.shutdown();
+        Thread.sleep(1000);
+        if(hashSet.size() > 0)
+            throw new IllegalArgumentException("线程不安全啦, 快跑啊!!!");
+    }
+}
+
+class Service1 {
+    public void process(String userName) {
+        Session session = new Session(userName);
+        ThreadLocalSessionTest.threadLocal.set(session);
+        new Service2().process();
+    }
+}
+
+class Service2 {
+    public void process() {
+        Session session = ThreadLocalSessionTest.threadLocal.get();
+        System.out.println("Service2 Session Info : " + session.name);
+        ThreadLocalSessionTest.hashSet.add(session.name);
+        new Service3().process();
+    }
+}
+
+class Service3 {
+    public void process() {
+        Session session = ThreadLocalSessionTest.threadLocal.get();
+        System.out.println("Service3 Session Info : " + session.name);
+        ThreadLocalSessionTest.hashSet.remove(session.name);
+    }
+}
+
+class Session {
+    String name ;
+    public Session(String name) {
+        this.name = name;
+    }
+}
+```
+
+该程序就是, server1调用server2, server2调用server3, 不通过参数的传递, 而是使用threadlocal来完成参数传递, 每一次的请求(即一个线程)只能看到自己的session信息, 而无法修改其它请求的session信息, 即对当前线程所有方法共享了session对象实例, 又避免被其它线程修改。
