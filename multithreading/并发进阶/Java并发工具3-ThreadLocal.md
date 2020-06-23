@@ -441,7 +441,7 @@ public class ThreadLocalMultTest {
 ###### ThreadLocal相关方法源码分析
 
 
-**首先来看get()方法的分析**
+**get()方法的分析**
 
 ```java
 public T get() {
@@ -508,3 +508,34 @@ private T setInitialValue() {
 ![threadlocal-get源码分析4](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/threadlocal-get%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%904.png?raw=true)
 
 执行完setInitialValue()方法后, 在一次去获取ThreadLocalMap不会为null, 之后通过当前ThreadLocal对象去获取ThreadLocalMap中的数组值, 然后返回对象。
+
+
+**set()方法的分析**
+
+在看完get()方法后, 在来看set()方法, 是不是会感觉轻松很多, 基本就是按照当前线程对象引用去获取ThreadLocalMap, 如果当前线程存在ThreadLocalMap则set值, 否则创建一个ThreadLocalMap对象。
+
+```java
+public void set(T value) {
+    // 获取当前线程对象引用
+    Thread t = Thread.currentThread();
+    // 获取当前线程的ThreadLocalMap对象
+    ThreadLocalMap map = getMap(t);
+    /*
+      如果当前线程存在ThreadLocalMap对象使用set设置新值, Key为当
+      前ThreadLocal对象, Vlaue为我们set的值。否则创建一个新的ThreadLocalMap对象。
+    */
+    if (map != null)
+        map.set(this, value);
+    else
+        createMap(t, value);
+}
+```
+
+
+![threadlocal-set源码分析1](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/threadlocal-set%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%901.png?raw=true)
+
+我们断点到Thread-C线程中, 创建对象后调用ThreadLocal的set方法。
+
+![threadlocal-set源码分析2](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/threadlocal-set%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%902.png?raw=true)
+
+调用时, 会将当前的ThreadLocal最为Key, 传入的值作为Value。
