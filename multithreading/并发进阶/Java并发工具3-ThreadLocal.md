@@ -503,4 +503,8 @@ private T setInitialValue() {
 
 ![threadlocal-get源码分析3](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/threadlocal-get%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%903.png?raw=true)
 
+进入setInitialValue()方法后, 就会执行initialValue()方法, 也就是我们在创建ThreadLocal类的时候重写的initialValue方法(调用的过程会继续执行get()方法), 如果是首次, 则使用createMap创建ThreadLocalMap否则set更新数据
+
 ![threadlocal-get源码分析4](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/threadlocal-get%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%904.png?raw=true)
+
+执行完setInitialValue()方法后, 在一次去获取ThreadLocalMap不会为null, 之后通过当前ThreadLocal对象去获取ThreadLocalMap中的数组值, 然后返回对象。
