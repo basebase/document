@@ -447,20 +447,19 @@ public class ThreadLocalMultTest {
 public T get() {
     // 获取到当前执行线程引用对象
     Thread t = Thread.currentThread();
-    // 更具当前线程获取到对应的THreadLocalMap对象
+    // 更具当前线程获取到对应的ThreadLocalMap对象
     ThreadLocalMap map = getMap(t);
 
     /*
         当我们重写initialValue()方法并第一次调用get()方法时,
-        ThreadLocalMap返回肯定为null, 会首次执行setInitialValue()方法
-        进行一次初始化, 这也就对应我们上面说的延迟加载;
-
-        但是, 优先使用set则不会, 下面的分析自然看到;
+        ThreadLocalMap返回肯定为null, 首次调用会执行setInitialValue()方法进行一次初始化, 这也就对应我们上面说的延迟加载;
     */
     if (map != null) {
+        // 更具当前的ThreadLocal对象获取到对应的Entry对象值
         ThreadLocalMap.Entry e = map.getEntry(this);
         if (e != null) {
             @SuppressWarnings("unchecked")
+            // 获取到值, 返回
             T result = (T)e.value;
             return result;
         }
@@ -470,6 +469,11 @@ public T get() {
       这里就是上面说的懒加载, 第一次调用get()时候会初始化值
     */
     return setInitialValue();
+}
+
+// 从Thread类中获取到threadLocals成员变量
+ThreadLocalMap getMap(Thread t) {
+    return t.threadLocals;
 }
 
 
@@ -522,7 +526,7 @@ public void set(T value) {
     ThreadLocalMap map = getMap(t);
     /*
       如果当前线程存在ThreadLocalMap对象使用set设置新值, Key为当
-      前ThreadLocal对象, Vlaue为我们set的值。否则创建一个新的ThreadLocalMap对象。
+      前ThreadLocal对象, Value为我们set的值。否则创建一个新的ThreadLocalMap对象。
     */
     if (map != null)
         map.set(this, value);
