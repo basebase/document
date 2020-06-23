@@ -414,3 +414,24 @@ public class ThreadLocalMultTest {
     }
 }
 ```
+
+
+###### ThreadLocal相关方法介绍
+
+  1. initialValue()
+    + 该方法会返回当前线程对应的"初始值", 这是一个延迟加载的方法, 只有调用get()方法的时候, 才会触发;
+
+    + 如果线程优先调用set()方法, 这种情况下, 不会调用initialValue()方法;
+
+    + initialValue()方法只有在线程第一次调用get()会被触发, 之后就不会被调用了, 但是如果使用了remove()方法后, 在调用get()方法, 则可以再次调用initialValue()方法;
+
+    + 如果不重写initialValue()方法, 该方法会返回null;
+
+  2. set(T t)
+    + 为当前线程设置一个值;
+
+  3. T get()
+    + 得到这个线程对应的value, 如果是首次调用get(), 则会调用initialValue()方法获取到对应的副本对象;
+
+  4. remove()
+    + 删除对应线程的值;
