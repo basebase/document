@@ -433,6 +433,74 @@ public class ThreadLocalMultTest {
 
 3. T get()
   * 得到这个线程对应的value, 如果是首次调用get(), 则会调用initialValue()方法获取到对应的副本对象;
-  
+
 4. remove()
   * 删除对应线程的值;
+
+
+###### ThreadLocal相关方法源码分析
+
+
+**首先来看get()方法的分析**
+
+```java
+public T get() {
+    // 获取到当前执行线程引用对象
+    Thread t = Thread.currentThread();
+    // 更具当前线程获取到对应的THreadLocalMap对象
+    ThreadLocalMap map = getMap(t);
+
+    /*
+        当我们重写initialValue()方法并第一次调用get()方法时,
+        ThreadLocalMap返回肯定为null, 会首次执行setInitialValue()方法
+        进行一次初始化, 这也就对应我们上面说的延迟加载;
+
+        但是, 优先使用set则不会, 下面的分析自然看到;
+    */
+    if (map != null) {
+        ThreadLocalMap.Entry e = map.getEntry(this);
+        if (e != null) {
+            @SuppressWarnings("unchecked")
+            T result = (T)e.value;
+            return result;
+        }
+    }
+
+    /**
+      这里就是上面说的懒加载, 第一次调用get()时候会初始化值
+    */
+    return setInitialValue();
+}
+
+
+private T setInitialValue() {
+    // 调用我们的initialValue()方法
+    T value = initialValue();
+    // 获取到当前线程
+    Thread t = Thread.currentThread();
+    // 更具当前线程获取到对应的ThreadLocalMap对象
+    ThreadLocalMap map = getMap(t);
+    /*
+      如果存在ThreadLocalMap对象, 则把当前ThreadLocal对象作为Key,
+      我们要共享的对象设置为Value, 否则就创建ThreadLocalMap对象, 并写入对应信息
+    */
+    if (map != null)
+        map.set(this, value);
+    else
+        createMap(t, value);
+    return value;
+}
+```
+
+
+![threadlocal-get源码分析1](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/threadlocal-get%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%901.png?raw=true)
+
+通过Thread-A线程去获取我们ThreadLocal中的副本, 我们记录了当前ThreadLocal的地址信息, 方便后续底层方法对比。
+
+![threadlocal-get源码分析2](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/threadlocal-get%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%902.png?raw=true)
+
+当我们执行到get()方法的时候, 首先会更具当前线程线程对象引用去获取到对应的ThreadLocalMap对象实例, 如果是第一次调用get那么返回一定是null。所以会进入setInitialValue()方法中。
+
+![threadlocal-get源码分析3](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/threadlocal-get%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%903.png?raw=true)
+
+![threadlocal-get源码分析4](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/threadlocal-get%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%904.png?raw=true)
