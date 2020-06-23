@@ -539,3 +539,29 @@ public void set(T value) {
 ![threadlocal-set源码分析2](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/threadlocal-set%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%902.png?raw=true)
 
 调用时, 会将当前的ThreadLocal最为Key, 传入的值作为Value。
+
+
+**remove()方法的分析**
+
+```java
+public void remove() {
+   ThreadLocalMap m = getMap(Thread.currentThread());
+   if (m != null)
+       m.remove(this);
+}
+```
+
+这个方法非常简短, 获取当前线程对应的ThreadLocalMap对象引用, 如果线程中存在ThreadLocalMap对象则调用m.remove()方法, 删除当前ThreadLocal的Key。否则就什么都不操作...
+
+
+**initialValue()方法的分析**
+
+至于initialValue()方法? 先来看看ThreadLocal类中的创建。
+
+```java
+protected T initialValue() {
+    return null;
+}
+```
+
+看到没, 就是一个返回null值, 其余什么都没有。所以我们要重写该方法, 否则永远都是一个null值。
