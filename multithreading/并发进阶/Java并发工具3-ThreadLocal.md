@@ -365,3 +365,52 @@ class Session {
   * 更高效利用内存, 节省开销。相比最初每个线程都需要创建一个SimpleDateFormat对象解决线程安全问题, 使用ThreadLocal就可以避免从而节省内存;
 
   * 避免传参的繁琐;
+
+
+
+##### ThreadLocal原理
+
+经过上面的学习对ThreadLocal已经有了一个大概的了解以及如何去使用ThreadLocal了。那么, ThreadLocal内部是如何实现的呢? 下面我们就来逐步的分析。
+
+
+###### Thread、ThreadLocal和ThreadLocalMap关系
+在对ThreadLocal源码分析之前呢, 我们先来了解一些基本组件类的关系。Thread, ThreadLocal以及ThreadLoaclMap三者之间的关系。
+
+![threadlocal组件关系图](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/threadlocal%E7%BB%84%E4%BB%B6%E5%85%B3%E7%B3%BB%E5%9B%BE.png?raw=true)
+
+通过上图可以了解到, 每一个Thread对象都包含一个ThreadLocalMap成员变量, 而ThreadLocalMap中是一个K,V数组, Key就是我们的ThreadLocal, Value是一个Object的对象值。
+
+之所以是一个数组, 这是因为一个线程中可能持有使用N个ThreadLocal对象。
+
+比如, 下面这个例子中就持有两个ThreadLocal变量:
+```java
+
+/***
+ *      描述:     一个线程中持有多个ThreadLocal变量
+ */
+public class ThreadLocalMultTest {
+    private static ThreadLocal<Test1> test1ThreadLocal = ThreadLocal.withInitial(() -> new Test1());
+    private static ThreadLocal<Test2> test2ThreadLocal = ThreadLocal.withInitial(() -> new Test2());
+    public static void main(String[] args) {
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(10);
+        for (int i = 0; i < 50; i++) {
+            final String NAME = "FINAL-" + i;
+            final Integer SCORE = i;
+            executorService.execute(() -> {
+                /***
+                 *      由于这里也不是传递参数什么的, 所以直接get到对象进行set赋值,
+                 *      仅仅只是测试方便使用, 不推荐这样写
+                 */
+                Test1 t1 = test1ThreadLocal.get();
+                Test2 t2 = test2ThreadLocal.get();
+                t1.setName(NAME);
+                t2.setScore(SCORE);
+
+                System.out.println("NAME : " + t1.getName() + " SCORE : " + t2.getScore());
+            });
+        }
+        executorService.shutdown();
+    }
+}
+```
