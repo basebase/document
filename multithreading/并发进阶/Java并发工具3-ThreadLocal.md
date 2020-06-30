@@ -367,6 +367,81 @@ class Session {
   * 避免传参的繁琐;
 
 
+##### ThreadLocal错误使用
+
+```java
+
+/***
+ *      描述:    不正当使用ThreadLocal导致线程安全问题
+ */
+public class ThreadLocalSimpleDateFormatNoSafe {
+    private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+    private static ThreadLocal<SimpleDateFormat> threadLocal = new ThreadLocal<SimpleDateFormat>(){
+        @Override
+        protected SimpleDateFormat initialValue() {
+            return simpleDateFormat;
+        }
+    };
+
+    private static ThreadLocal<SimpleDateFormat> threadLocal2 = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd hh:mm:ss"));
+
+    public static void main(String[] args) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Date date = new Date(1000 * 1);
+                String format = null;
+                String format2 = null;
+                SimpleDateFormat dateFormat = threadLocal.get();
+                SimpleDateFormat dateFormat2 = threadLocal2.get();
+
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                format = dateFormat.format(date);
+                format2 = dateFormat2.format(date);
+
+                System.out.println(Thread.currentThread().getName() + " date : " + format);
+                System.out.println(Thread.currentThread().getName() + " date2 : " + format2);
+            }
+        }, "Thread-A").start();
+
+        /// ...
+    }
+}
+```
+![threadlocal共享变量错误](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/threadlocal%E5%85%B1%E4%BA%AB%E5%8F%98%E9%87%8F%E9%94%99%E8%AF%AF.png?raw=true)
+
+上图为运行结果, 可以看到threadLocal使用的是一个静态变量, 静态变量可以被多个线程共享, 所以传入到threadlocal中还是会存在线程安全的。
+
+Threadlocal之所以使得各个线程能够保持各自独立的对象, 并不是通过ThreadLocal的set()方法或者initialValue()方法实现的, 而是通过每个线程中new出来的对象, 并操作这个new出来的对象。
+
+**每个线程线程创建一个新对象, 其实并不是对象的拷贝或者副本[注意: 这里的副本或者拷贝我更多的认为是英文翻译的说法]。**
+
+上面使用静态对象就是最好的例子, 如果ThreadLocal真的会帮助我们创建副本, 就不会出现线程安全问题了。
+
+**[ps: 先看一下ThreadLocal原理的Thread、ThreadLocal和ThreadLocalMap关系图, 再来看我说的下面的话]**
+
+其实, 每个线程都有自己的ThreadLocalMap, 但是我们静态变量就是一个实例, 无论我们的ThreadLocalMap如何存储, 最终都是统一指向这一个对象实例。但是如果是new出来新的对象, 那么每个线程的ThreadLocalMap都有自己的对象实例地址, 这才形成相互不影响。
+
+总结一下:
+  1. 如果ThreadLocal.set()的对象本来就是多个线程共享的话, 那么多个线程使用ThreadLocal.get()方法获取到的还是这个共享对象本身, 还是会出现线程安全问题;
+
+  2. ThreadLocal方法并不会为我们创建对象副本, 而是我们自己需要new出一个实例或者使用clone()方法, 这样才是安全正确的使用ThreadLocal;
+
+  3. 既然都是要new对象, 我为什么不使用局部变量? 非要使用ThreadLocal呢?
+    + 使用ThreadLocal可以在当前线程内独享, 传递到各个不同的方法中避免参数传递, 而且减少创建对象的开销。
+
+
+参考[建议都看一下, 第二篇评论区挺精彩]:
+
+[正确理解ThreadLocal](https://www.iteye.com/topic/103804)
+
+[Java并发编程：深入剖析ThreadLocal](https://www.cnblogs.com/dolphin0520/p/3920407.html#!comments)
+
 
 ##### ThreadLocal原理
 
