@@ -692,3 +692,10 @@ Thread Ref -> Thread -> ThreadLocalMap -> Entry -> Value
 使用static来修饰目的是为了减少创建ThreadLocal对象, 如果你有100个线程都创建一个ThreadLocal对象但是功能和static修饰的对象完全一样, 对内存造成了浪费。
 
 所以, 想要避免内存泄露在运行结束后, 执行remove()方法才是最终的做法。
+
+参考:
+* [ThreadLocal内存泄漏问题](https://juejin.im/post/5ba9a6665188255c791b0520)
+
+* [深入分析 ThreadLocal 内存泄漏问题](https://www.jianshu.com/p/4958b3089967)
+
+* [都说ThreadLocal被面试官问烂了...](https://blog.csdn.net/tianruirui/article/details/105132387?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase)
