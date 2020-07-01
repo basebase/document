@@ -440,6 +440,51 @@ Threadlocal之所以使得各个线程能够保持各自独立的对象, 并不�
 [Java并发编程：深入剖析ThreadLocal](https://www.cnblogs.com/dolphin0520/p/3920407.html#!comments)
 
 
+##### ThreadLocal空指针异常?
+在我们使用threadlocal必须要先set()然后才能get()吗?否则会抛出空指针异常?
+对于这个问题, 我们先来看看下面的一个例子
+
+```java
+
+/***
+ *      描述:     使用ThreadLocal抛出空指针异常?
+ */
+
+public class ThreadLocalNPE {
+    ThreadLocal<Long> threadLocal = new ThreadLocal<>();
+
+    public void set() {
+        threadLocal.set(Thread.currentThread().getId());
+    }
+
+    public long get() {
+        return threadLocal.get();
+    }
+
+    public Long get2() {
+        return threadLocal.get();
+    }
+
+    public static void main(String[] args) {
+        ThreadLocalNPE threadLocalNPE = new ThreadLocalNPE();
+        new Thread(() -> {
+            threadLocalNPE.set();
+            System.out.println(threadLocalNPE.get());
+        }, "Thread-A").start();
+        System.out.println(threadLocalNPE.get2());
+        System.out.println(threadLocalNPE.get());
+    }
+}
+```
+
+这个例子呢, 当调用到System.out.println(threadLocalNPE.get());这句话的时候就会抛出空指针异常。为什么呢?
+
+主线程调用get2()方法没有抛出空指针异常这是因为, 我们ThreadLocal的泛型写的是Long类型, 在没有重写initialValue初始值就是null进行打印输出, 而我们get()方法则是返回long这个关键字, 由于ThreadLocal是Long类型, 就会进行拆箱, 但由于没有重写相关方法或者set值, 返回是一个null, 在拆箱的过程中会发生空指针异常。
+
+**所以, 并不是说get之前必须set, 否则可能抛出异常。这句话不是正确的。而是装箱拆箱导致的问题。**
+
+
+
 ##### ThreadLocal原理
 
 经过上面的学习对ThreadLocal已经有了一个大概的了解以及如何去使用ThreadLocal了。那么, ThreadLocal内部是如何实现的呢? 下面我们就来逐步的分析。
