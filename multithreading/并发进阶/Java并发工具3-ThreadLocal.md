@@ -641,3 +641,54 @@ protected T initialValue() {
 ```
 
 看到没, 就是一个返回null值, 其余什么都没有。所以我们要重写该方法, 否则永远都是一个null值。
+
+
+##### ThreadLocal内存泄露
+
+很多文章支出ThreadLocal会内存泄露, 但其实底层是ThreadLocalMap的数据结构, 而这个结构又是在每个线程中的, 只要当前线程不消亡ThreadLocalMap就会一直存在。
+所以对于说ThreadLocal会内存泄露, 我觉得说线程导致ThreadLocalMap内存泄露会不会比较好点?
+
+当然, 以上是我的一个理解, 如果有问题, 欢迎指出来！谢谢！
+
+对于内存泄露, 其实就是线程没有释放, 导致和ThreadLocalMap中有强引用的关系, 无法被GC回收, 进而引发的内存泄露问题。
+
+我们先来看看下图:
+
+![threadlocal对象引用关系](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/threadlocal%E5%AF%B9%E8%B1%A1%E5%BC%95%E7%94%A8%E5%85%B3%E7%B3%BB.png?raw=true)
+
+```java
+static class ThreadLocalMap {
+  static class Entry extends WeakReference<ThreadLocal<?>> {
+    Object value;
+    Entry(ThreadLocal<?> k, Object v) {
+        super(k);
+        value = v;
+    }
+  }
+}
+```
+
+WeakReference是一个弱引用类, 用它包装了我们的Key值也就是ThreadLocal。对于Java的四种引用关系可以自行查阅。
+
+也就是说只要设置threadlocal为null后, 下一次GC就一定会回收掉我们的key。
+
+这样一来ThreadLocalMap就会形成key为null, 但是value还是有值的, 只不过无法通过key获取到值而已。
+
+如果此时线程一直存活, 就会形成一条强引用链。
+```text
+Thread Ref -> Thread -> ThreadLocalMap -> Entry -> Value
+```
+这就导致value无法被回收, 从而造成内存泄露。
+
+当我们的线程正常结束后Thread Ref也会消失在栈内存中, 强引用断开。当前线程的ThreadLocalMap的value都会被回收。
+
+这里也就出现我们常说的线程池了, 线程不会销毁。再次使用的时候可能就会出现内存泄露。
+
+对于如何解决内存泄露问题:
+  1. 使用完ThreadLocal后调用remove()方法清除数据。
+
+对于网上很多说使用private static来修饰ThreadLocal可以减少, 我的理解是和static没有任何关系的。
+
+使用static来修饰目的是为了减少创建ThreadLocal对象, 如果你有100个线程都创建一个ThreadLocal对象但是功能和static修饰的对象完全一样, 对内存造成了浪费。
+
+所以, 想要避免内存泄露在运行结束后, 执行remove()方法才是最终的做法。
