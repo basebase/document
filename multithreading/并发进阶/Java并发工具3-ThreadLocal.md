@@ -699,3 +699,5 @@ Thread Ref -> Thread -> ThreadLocalMap -> Entry -> Value
 * [深入分析 ThreadLocal 内存泄漏问题](https://www.jianshu.com/p/4958b3089967)
 
 * [都说ThreadLocal被面试官问烂了...](https://blog.csdn.net/tianruirui/article/details/105132387?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase)
+
+* [面试官：听说你看过ThreadLocal源码](https://segmentfault.com/a/1190000022663697#item-2)
