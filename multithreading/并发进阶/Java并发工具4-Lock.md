@@ -69,3 +69,186 @@ Lock是一种用于控制多个线程对共享资源独占访问的工具。
   2. Lock和synchronized有一点非常不同, 使用synchronized不需要手动释放锁, 当synchronized方法或者synchronized代码块执行完后, 系统会自动让线程释放对锁的占用; 而Lock则必须要手动释放锁, 如果没有释放锁, 可能会出现死锁。
 
   3. 至于使用Lock还是synchronized, 如果只锁定一个对象还是建议使用synchronized, 使用Lock则需要自己手动释放锁等。
+
+
+##### Lock实例
+上面只是对Lock接口只是大致的一个介绍, 下面我们就开始对Lock接口的API方法进行具体的实例。更加直观的了解Lock的作用。
+
+那么, 我会按照下面这张图的API方法依次开始介绍。
+
+![java锁API方法.png](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/java%E9%94%81API%E6%96%B9%E6%B3%95.png?raw=true)
+
+
+###### lock()方法
+首先来介绍lock()方法, 此方法用于获取锁, 但是如果锁被其它线程持有则进入等待状态, 并且该方法无法被中断, 一旦死锁后就会陷入无限的等待中...
+
+使用Lock接口中的其它获取锁方法, 都必须搭配上unlock()方法, 否则锁不会被释放。从而造成死锁的困境。
+
+
+使用lock()方法呢, 也有一套模板方法, 如下:
+
+```java
+try {
+  lock.lock();
+  // ...
+} finally {
+  lock.unlock();
+}
+```
+
+注意, unlock()方法最好是在finally块中, 即使程序出现异常, 也能正确将锁释放,
+避免出现死锁的情况。
+
+当然程序有异常的情况也还是要加入catch块的。但是释放锁必须写在finally中。
+
+下面来看看具体的一个例子
+
+```java
+
+/***
+ *      描述:     Lock不会和synchronized一样自动释放锁, 所以需要在finally中释放持有的锁,
+ *               保证发生异常时锁能够被释放
+ */
+public class LockSimpleExample {
+
+    static Lock lock = new ReentrantLock();
+    static int count = 0;
+    public static void main(String[] args) {
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(10);
+        for (int i = 0; i < 10; i++) {
+            executorService.execute(() -> {
+                try {
+                    lock.lock();
+                    ++ count;
+                    System.out.println(Thread.currentThread().getName() +
+                            " start job id : " + count);
+                    int j = 1 / 0;
+                    lock.unlock();
+
+                } finally {
+                    // 如果这里不释放锁, 那么就会出现死锁了, 当前线程不释放锁, 其它线程无法获取到锁;
+//                    lock.unlock();
+                }
+            });
+        }
+        executorService.shutdown();
+    }
+}
+```
+
+可以看到, 我们的unlock()方法在发生异常程序之后, 这就会导致其它线程会一直等待锁, 形成死锁的问题。当我们把finally块中代码注释取消就可以正确的释放锁, 即使出现异常也不会受影响、
+
+
+###### tryLock()方法
+该方法尝试获取锁, 如果当前锁没有被其它线程占用, 则获取成功返回true, 否则获取失败返回false。该方法会立即返回, 即使获取不到锁也不会一直等待。
+
+我们也可以给tryLock()方法传递参数, 在指定的时间内尝试获取锁, 如果获取到锁返回true, 否则返回false。
+
+对于tryLock()方法也有对应的模板使用方法, 如下:
+```java
+if (lock.tryLock() || lock.tryLock(timeout, unit)) {
+  try {
+    // ...
+  } finally {
+    lock.unlock();
+  }
+} else {
+  // ...
+}
+```
+
+当获取到锁的时候, 我们可以处理那些业务逻辑, 当没获取到锁时, 我们又可以处理那些逻辑。
+
+使用tryLock()方法可以避免出现死锁的问题, 当线程A持有锁1, 线程B持有锁2, 此时线程A想要持有锁2, 使用tryLock()获取失败, 就会退出等待并释放所持有的锁1对象, 而我们的线程B则可以顺利的获取到线程A释放的锁1执行相关方法, 线程A再次获取锁1和锁2对象就可。 
+
+下面来看具体实例:
+```java
+
+/***
+ *      描述:     tryLock()方法避免死锁的发生, 对比例子LockSimpleExample2.java
+ *               本例中解决死锁的问题, tryLock()之所以解决了, 正是因为其获取不到锁不会无休止的等待, 而是会退出等待
+ */
+public class TryLockSimpleExample {
+
+    static Lock lock1 = new ReentrantLock();
+    static Lock lock2 = new ReentrantLock();
+
+    public static void main(String[] args) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+
+                    while (true) {
+
+                        if (lock1.tryLock(1, TimeUnit.SECONDS)) {
+
+                            try {
+
+                                System.out.println(Thread.currentThread().getName() + " 获取到lock1");
+                                Thread.sleep(new Random().nextInt(1000));
+
+                                if (lock2.tryLock(1, TimeUnit.SECONDS)) {
+
+                                    try {
+                                        System.out.println(Thread.currentThread().getName() + " 获取到lock2");
+                                        break;
+                                    } finally {
+                                        lock2.unlock();
+                                        System.out.println(Thread.currentThread().getName() + " 释放lock2");
+                                    }
+                                } else {
+                                    System.out.println(Thread.currentThread().getName() + " 获取lock2失败, 重新获取");
+                                }
+                            } finally {
+                                lock1.unlock();
+                                System.out.println(Thread.currentThread().getName() + " 释放lock1");
+                            }
+                        } else {
+                            System.out.println(Thread.currentThread().getName() + " 获取lock1失败, 重新获取");
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, "Thread-A").start();
+
+        new Thread(() -> {
+            try {
+                while (true) {
+
+                    if (lock2.tryLock(1, TimeUnit.SECONDS)) {
+                        try {
+                            System.out.println(Thread.currentThread().getName() + " 获取到lock2");
+                            Thread.sleep(new Random().nextInt(1000));
+
+                            if (lock1.tryLock(1, TimeUnit.SECONDS)) {
+
+                                try {
+                                    System.out.println(Thread.currentThread().getName() + " 获取到lock1");
+                                    break;
+                                } finally {
+                                    lock1.unlock();
+                                    System.out.println(Thread.currentThread().getName() + " 释放lock1");
+                                }
+                            } else {
+                                System.out.println(Thread.currentThread().getName() + " 获取lock1失败, 重新获取");
+                            }
+                        } finally {
+                            lock2.unlock();
+                            System.out.println(Thread.currentThread().getName() + " 释放lock2");
+                        }
+                    } else {
+                        System.out.println(Thread.currentThread().getName() + " 获取lock2失败, 重新获取");
+                    }
+                }
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }, "Thread-B").start();
+    }
+}
+```
