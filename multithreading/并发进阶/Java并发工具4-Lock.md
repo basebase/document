@@ -158,9 +158,9 @@ if (lock.tryLock() || lock.tryLock(timeout, unit)) {
 }
 ```
 
-当获取到锁的时候, 我们可以处理那些业务逻辑, 当没获取到锁时, 我们又可以处理那些逻辑。
+当获取到锁的时候, 我们可以处理那些业务逻辑, 当没获取到锁时, 我们又可以处理哪些逻辑。
 
-使用tryLock()方法可以避免出现死锁的问题, 当线程A持有锁1, 线程B持有锁2, 此时线程A想要持有锁2, 使用tryLock()获取失败, 就会退出等待并释放所持有的锁1对象, 而我们的线程B则可以顺利的获取到线程A释放的锁1执行相关方法, 线程A再次获取锁1和锁2对象就可。 
+使用tryLock()方法可以避免出现死锁的问题, 当线程A持有锁1, 线程B持有锁2, 此时线程A想要持有锁2, 使用tryLock()获取失败, 我们就让线程A释放锁1, 此时我们的线程B就可以尝试获取锁1, 如果获取到了则进行相关逻辑处理, 否则释放锁2, 所以当其中一个线程完成逻辑后, 另外一个线程就可以正常的获取到两把锁。
 
 下面来看具体实例:
 ```java
@@ -249,6 +249,74 @@ public class TryLockSimpleExample {
                 e.printStackTrace();
             }
         }, "Thread-B").start();
+    }
+}
+```
+
+
+###### lockInterruptibly()方法
+lockInterruptibly()方法比较特殊, 当通过这个方法获取锁的时候, 如果线程正在等待锁, 则这个线程可以响应中断。
+
+也就是说当两个线程同时通过lock.lockInterruptibly()方法想获取某个锁时, 假如此时线程A获取到锁, 而线程B只能等待, 那么对线程B调用interrupt()方法能够中断线程B的等待过程。当然, 我们不仅仅可以在等待获取锁的时候中断线程, 在获取到锁之后同样也可以调用interrupt()方法中断在执行的线程。
+
+由于lockInterruptibly()方法会抛出异常, 所以使用lockInterruptibly()方法必须在try/catch块中或者抛出InterruptedException。
+
+下面来看具体实例:
+
+```java
+/***
+ *
+ *      描述:     一个线程获取到锁, 另外一个线程等待锁, 两种情况下中断线程
+ */
+
+public class LockInterruptiblySimpleExample {
+    static Lock lock = new ReentrantLock();
+
+    public static void main(String[] args) throws InterruptedException {
+
+        Thread t1 = new Thread(task(), "Thread-A");
+        Thread t2 = new Thread(task(), "Thread-B");
+
+        t1.start();
+        t2.start();
+
+        Thread.sleep(2000);
+
+        /***
+         *
+         *      当调用线程的interrupt来中断线程, 可能在不同时间节点会有不同的表现, 由于lockInterruptibly()方法本身就会抛出中断异常
+         *      所以, 当线程还在等待获取锁的时候就可以被中断。当线程获取到锁依旧可以被中断
+         *
+         *      当t1线程获取到锁时, 调用interrupt时, 会输出 "休眠期间被中断",
+         *      而当t1线程没有获取到锁时, 调用interrupt时, 会输出 "等锁期间被中断"
+         *
+         *      都可以正常的中断执行的线程
+         */
+
+//        t1.interrupt();
+        t2.interrupt();
+
+    }
+
+    private static Runnable task() {
+        return () -> {
+            System.out.println(Thread.currentThread().getName() + " 尝试获取lock");
+            try {
+                lock.lockInterruptibly();
+                try {
+                    System.out.println(Thread.currentThread().getName() + " 获取到锁");
+                    Thread.sleep(50000);
+                } catch (InterruptedException e) {
+                    System.out.println(Thread.currentThread().getName() + " 休眠期间被中断");
+                } finally {
+                    lock.unlock();
+                    System.out.println(Thread.currentThread().getName() + " 释放锁");
+                }
+            } catch (InterruptedException e) {
+//                e.printStackTrace();
+                System.out.println(Thread.currentThread().getName() + " 等锁期间被中断");
+            }
+        };
     }
 }
 ```
