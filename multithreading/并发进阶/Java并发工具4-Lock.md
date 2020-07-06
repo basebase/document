@@ -1,6 +1,6 @@
-#### Java并发工具4-Lock
+### Java并发工具4-Lock
 
-##### 概述
+#### 概述
 对于Java中的锁, 不仅仅是我们之前学习的synchronized关键字。其实juc还提供了Lock接口, 并实现了各种各样的锁。每种锁的特性不同, 可以适用于不同的场景展示出非常高的效率。
 
 由于锁的特性非常多, 故按照特性进行分类, 帮助大家快速的梳理相关知识点。
@@ -16,9 +16,9 @@
   * 锁优化
 
 
-##### Lock还是synchronized?
+#### Lock还是synchronized?
 
-###### Lock
+##### Lock
 
 我们先来看看JDK对Lock的描述:
 
@@ -39,7 +39,7 @@ Lock是一种用于控制多个线程对共享资源独占访问的工具。
 只不过, Lock能带来一些灵活的操作, 但是灵活的代价就是维护的一些成本, 后面会说到。
 
 
-###### synchronized
+##### synchronized
 对Lock有了一个大概的了解后, 那synchronized呢?
 
 鉴于很多地方在学习Lock都会对比synchronized。那就必须要看看使用synchronized会有哪些问题? Lock工具类是否又帮助我们解决了?
@@ -71,7 +71,7 @@ Lock是一种用于控制多个线程对共享资源独占访问的工具。
   3. 至于使用Lock还是synchronized, 如果只锁定一个对象还是建议使用synchronized, 使用Lock则需要自己手动释放锁等。
 
 
-##### Lock实例
+#### Lock实例
 上面只是对Lock接口只是大致的一个介绍, 下面我们就开始对Lock接口的API方法进行具体的实例。更加直观的了解Lock的作用。
 
 那么, 我会按照下面这张图的API方法依次开始介绍。
@@ -79,7 +79,7 @@ Lock是一种用于控制多个线程对共享资源独占访问的工具。
 ![java锁API方法.png](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/java%E9%94%81API%E6%96%B9%E6%B3%95.png?raw=true)
 
 
-###### lock()方法
+##### lock()方法
 首先来介绍lock()方法, 此方法用于获取锁, 但是如果锁被其它线程持有则进入等待状态, 并且该方法无法被中断, 一旦死锁后就会陷入无限的等待中...
 
 使用Lock接口中的其它获取锁方法, 都必须搭配上unlock()方法, 否则锁不会被释放。从而造成死锁的困境。
@@ -140,7 +140,7 @@ public class LockSimpleExample {
 可以看到, 我们的unlock()方法在发生异常程序之后, 这就会导致其它线程会一直等待锁。当我们把finally块中代码注释取消就可以正确的释放锁, 即使出现异常也不会受影响、
 
 
-###### tryLock()方法
+##### tryLock()方法
 该方法尝试获取锁, 如果当前锁没有被其它线程占用, 则获取成功返回true, 否则获取失败返回false。该方法会立即返回, 即使获取不到锁也不会一直等待。
 
 我们也可以给tryLock()方法传递参数, 在指定的时间内尝试获取锁, 如果获取到锁返回true, 否则返回false。
@@ -254,7 +254,7 @@ public class TryLockSimpleExample {
 ```
 
 
-###### lockInterruptibly()方法
+##### lockInterruptibly()方法
 lockInterruptibly()方法比较特殊, 当通过这个方法获取锁的时候, 如果线程正在等待锁, 则这个线程可以响应中断。
 
 也就是说当两个线程同时通过lock.lockInterruptibly()方法想获取某个锁时, 假如此时线程A获取到锁, 而线程B只能等待, 那么对线程B调用interrupt()方法能够中断线程B的等待过程。当然, 我们不仅仅可以在等待获取锁的时候中断线程, 在获取到锁之后同样也可以调用interrupt()方法中断在执行的线程。
@@ -320,3 +320,32 @@ public class LockInterruptiblySimpleExample {
     }
 }
 ```
+
+
+#### 锁分类
+
+##### 悲观锁与乐观锁
+下面会对悲观锁和乐观锁进行以下方面介绍:
+  * 悲观锁和乐观锁介绍
+  * 悲观锁和乐观锁执行过程
+  * 乐观锁的缺点
+  * 悲观锁和乐观锁如何选择
+  * 悲观锁和乐观锁的例子
+
+###### 什么是悲观锁什么是乐观锁
+悲观锁认为自己在使用数据的时候一定有别的线程来修改数据, 因此在获取数据的时候就会先加锁, 确保数据不会被别的线程修改。在Java中synchronized关键字和Lock的实现类都是悲观锁。
+
+对于乐观锁而言, 认为自己使用数据时不会有别的线程修改数据, 所以不会添加锁, 只是在更新数据的时候去判断之前有没有别的线程更新了这个数据。如果这个数据没有被更新, 则当前线程将自己修改的数据写入。如果数据被其它线程更新, 则更具不同实现方式执行不同的操作(例如报错或者自动重试)。
+
+这里需要注意的是, 乐观锁是通过不加锁的方式进行的, 所以更准确的叫法为
+**"乐观并发控制, 英文为(Optimistic Concurrency Control, 可缩写为OCC)"**
+
+在Java中实现乐观锁的方发是CAS算法, 而Java原子类中的递增操作就是通过CAS自旋实现的。
+
+
+###### 两种锁的执行流程
+
+我们通过下面的图来了解一下悲观锁和乐观锁的执行流程。
+
+![悲观锁](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/java%E6%82%B2%E8%A7%82%E9%94%81.png?raw=true)
+![乐观锁](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/java%E4%B9%90%E8%A7%82%E9%94%81.png?raw=true)
