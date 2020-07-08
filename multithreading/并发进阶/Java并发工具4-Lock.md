@@ -323,8 +323,8 @@ public class LockInterruptiblySimpleExample {
   * 悲观锁和乐观锁执行方式图解
   * 悲观锁和乐观锁的例子
   * 乐观锁实现的几种方式
-  * 乐观锁的缺点
-  * 悲观锁和乐观锁如何选择
+  * 优缺点以及如何选择
+  * CAS有哪些缺点
 
 
 ###### 什么是悲观锁什么是乐观锁
@@ -420,3 +420,32 @@ public class OptimisticAndPessimisticLocking {
 使用乐观锁允许冲突, 但是在版本更新后进行update时会检测到冲突。
 
 这次, 在account账户中添加了version字段, version列主要作用就是在每次执行update或者delete时都会增加, 并且在update和delete语句的where字句中也使用此列。为此, 我们需要version在执行update或者delete之前发出select并读取当前的值, 否则, 我们将不知道哪个版本值传递给where字句或进行递增。
+
+
+###### 优缺点以及如何选择
+
+这里更多是如何选择更适合什么场景下的锁
+
+**功能限制**  
+与悲观锁对比, 乐观锁适用场景受到更多限制, 无论是CAS还是版本机制。
+例如: CAS只能保证单个变量操作的原子性, 当涉及到多个变量时, CAS是无力的, 而synchronized或者Lock则可以通过对整个代码块加锁进行处理。
+
+在比如, select的是表1, 而update的是表2也很难通过比较简单的版本号实现乐观锁。
+
+**竞争激烈程度**  
+如果悲观锁和乐观锁都可以用, 就需要考虑竞争的激烈程度:
+  * 竞争不激烈(出现冲突概率小)时, 乐观锁更有优势, 使用悲观锁会锁住代码块或数据, 其它线程无法同时访问, 影响并发, 而且加锁和解锁都需要消耗资源。
+
+  * 竞争激烈(出现冲突概率大)时, 悲观锁更体现优势, 因为乐观锁在执行更新时频繁失败, 需要不断重试, 浪费CPU资源。
+
+
+
+参考  
+
+[Optimistic vs. Pessimistic Locking](https://medium.com/@recepinancc/til-9-optimistic-vs-pessimistic-locking-79a349b76dc8)
+
+[Optimistic vs. Pessimistic locking(stackoverflow)](https://stackoverflow.com/questions/129329/optimistic-vs-pessimistic-locking)
+
+[【BAT面试题系列】面试官：你了解乐观锁和悲观锁吗？](https://www.cnblogs.com/kismetv/p/10787228.html)
+
+[面试必备之乐观锁与悲观锁](https://juejin.im/post/5b4977ae5188251b146b2fc8)
