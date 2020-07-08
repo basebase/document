@@ -179,18 +179,14 @@ public class TryLockSimpleExample {
             @Override
             public void run() {
                 try {
-
                     while (true) {
-
                         if (lock1.tryLock(1, TimeUnit.SECONDS)) {
-
                             try {
 
                                 System.out.println(Thread.currentThread().getName() + " 获取到lock1");
                                 Thread.sleep(new Random().nextInt(1000));
 
                                 if (lock2.tryLock(1, TimeUnit.SECONDS)) {
-
                                     try {
                                         System.out.println(Thread.currentThread().getName() + " 获取到lock2");
                                         break;
@@ -218,14 +214,12 @@ public class TryLockSimpleExample {
         new Thread(() -> {
             try {
                 while (true) {
-
                     if (lock2.tryLock(1, TimeUnit.SECONDS)) {
                         try {
                             System.out.println(Thread.currentThread().getName() + " 获取到lock2");
                             Thread.sleep(new Random().nextInt(1000));
 
                             if (lock1.tryLock(1, TimeUnit.SECONDS)) {
-
                                 try {
                                     System.out.println(Thread.currentThread().getName() + " 获取到lock1");
                                     break;
@@ -244,7 +238,6 @@ public class TryLockSimpleExample {
                         System.out.println(Thread.currentThread().getName() + " 获取lock2失败, 重新获取");
                     }
                 }
-
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -327,10 +320,11 @@ public class LockInterruptiblySimpleExample {
 ##### 悲观锁与乐观锁
 下面会对悲观锁和乐观锁进行以下方面介绍:
   * 悲观锁和乐观锁介绍
-  * 悲观锁和乐观锁执行过程
+  * 悲观锁和乐观锁执行方式图解
+  * 悲观锁和乐观锁的例子
   * 乐观锁的缺点
   * 悲观锁和乐观锁如何选择
-  * 悲观锁和乐观锁的例子
+
 
 ###### 什么是悲观锁什么是乐观锁
 悲观锁认为自己在使用数据的时候一定有别的线程来修改数据, 因此在获取数据的时候就会先加锁, 确保数据不会被别的线程修改。在Java中synchronized关键字和Lock的实现类都是悲观锁。
@@ -343,9 +337,50 @@ public class LockInterruptiblySimpleExample {
 在Java中实现乐观锁的方发是CAS算法, 而Java原子类中的递增操作就是通过CAS自旋实现的。
 
 
-###### 两种锁的执行流程
+###### 两种锁的执行方式图解
 
 我们通过下面的图来了解一下悲观锁和乐观锁的执行流程。
 
 ![悲观锁](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/java%E6%82%B2%E8%A7%82%E9%94%81.png?raw=true)
 ![乐观锁](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/java%E4%B9%90%E8%A7%82%E9%94%81.png?raw=true)
+
+###### 悲观锁和乐观锁的例子
+
+对于上面的描述以及执行流程, 大概清楚了悲观锁和乐观锁, 但还是比较抽象的, 所以下面通过一个具体的例子进行展示。
+
+```java
+/***
+ *     描述:      展示乐观锁和悲观锁的例子
+ */
+public class OptimisticAndPessimisticLocking {
+
+    static double amount = 0.0;
+    static AtomicInteger count = new AtomicInteger();
+    public static void main(String[] args) {
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(10);
+        for (int i = 0; i < 20; i++) {
+            executorService.execute(() -> {
+                synchronized (OptimisticAndPessimisticLocking.class) {
+                    amount += 10.0;
+                    System.out.println("amount => " + amount);
+                    /***
+                     *    在这里, 一个乐观锁对象放入到悲观锁中, 这代表乐观锁是加锁了吗?
+                     *      不是的, 这只是乐观锁与加锁操作合作的一个例子, 不能改变, "乐观锁本身不加锁"的事实。
+                     */
+                    // count.incrementAndGet();
+                }
+
+                count.incrementAndGet(); // 自增加1
+                System.out.println("count => " + count.get());
+            });
+        }
+        executorService.shutdown();
+    }
+}
+```
+
+通过实例展示, 使用悲观锁基本都是在显示的锁定之后在操作同步资源, 而乐观锁则直接去操作同步资源。那么, 乐观锁为什么能够做到不锁住同步资源也可以正确的实现线程安全呢? 这里就用到了
+**CAS** 算法, 在java.util.concurrent包中的原子类都是通过CAS来实现乐观锁。
+
+在这里, 不会展开CAS, 而是会单独写一篇。
