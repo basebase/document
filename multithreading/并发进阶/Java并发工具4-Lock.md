@@ -419,4 +419,4 @@ public class OptimisticAndPessimisticLocking {
 
 使用乐观锁允许冲突, 但是在版本更新后进行update时会检测到冲突。
 
-这次, 在account账户中添加了version字段, version列主要作用就是在每次执行update或者delete时都会增加, 并且在update和delete语句的where条件中也使用此列。为此, 我们需要version在执行update或者delete之前发出select并读取当前的值, 否则, 我们将不知道哪个版本值传递给where字句或进行递增。
+这次, 在account账户中添加了version字段, version列主要作用就是在每次执行update或者delete时都会增加, 并且在update和delete语句的where字句中也使用此列。为此, 我们需要version在执行update或者delete之前发出select并读取当前的值, 否则, 我们将不知道哪个版本值传递给where字句或进行递增。
