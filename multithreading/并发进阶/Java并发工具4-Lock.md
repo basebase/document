@@ -322,6 +322,7 @@ public class LockInterruptiblySimpleExample {
   * 悲观锁和乐观锁介绍
   * 悲观锁和乐观锁执行方式图解
   * 悲观锁和乐观锁的例子
+  * 乐观锁实现的几种方式
   * 乐观锁的缺点
   * 悲观锁和乐观锁如何选择
 
@@ -384,3 +385,38 @@ public class OptimisticAndPessimisticLocking {
 **CAS** 算法, 在java.util.concurrent包中的原子类都是通过CAS来实现乐观锁。
 
 在这里, 不会展开CAS, 而是会单独写一篇。
+
+
+###### 乐观锁实现的几种方式
+乐观锁的实现方式常见为两种:
+  * CAS
+  * 版本机制
+
+
+这里只描述版本机制, 别人不都是版本号机制吗? 是的, 没错, 或许我们在学习的时候都是使用在数据库中添加一个version字段记录版本号来决定当前数据有没有被更新过。
+
+但要注意的是
+**使用version仅仅只是一种策略而已, 我们还可以使用时间戳(timestamp), 或者在一些极端情况下没法新增字段使用行本身的状态, 虽然这种策略很糟糕。但也是一种方式。**
+
+举个例子, 假设现在有两人分别为Alice和Bob, 他们分别从账户中取出一定的金额。
+
+![银行转账](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/java%E4%B9%90%E8%A7%82%E9%94%81%E7%89%88%E6%9C%AC1.png?raw=true)
+
+上图中, 我们可以看到Alice认为她可以从她的账户中取出40元, 但是没有意识到Bob刚更新了账户余额。现在账户余额中只剩下20元了。
+
+这个时候, Alice在取出40元的时候, 实际上已经没有富余的钱可以取出了, 如果还让Alice取出来了, 请第一时间告诉我, 我赶紧去取钱。
+
+那要避免这种冲突, 我们一般可以采用悲观锁和乐观锁来实现。
+
+
+![悲观锁保证](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/java%E4%B9%90%E8%A7%82%E9%94%81%E7%89%88%E6%9C%AC2.png?raw=true)
+
+使用悲观锁, 锁定账户共享资源, 只有获取锁才可以修改账户余额。可以防止另外一个人更改账户。
+
+因此在一个用户释放锁之前, 其他人都无法更改账户的金额。只有在提交事务并释放锁之后, 另外一个用户才可以进行新的update操作。否则会一直被阻塞。
+
+![乐观锁保证](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/java%E4%B9%90%E8%A7%82%E9%94%81%E7%89%88%E6%9C%AC3.png?raw=true)
+
+使用乐观锁允许冲突, 但是在版本更新后进行update时会检测到冲突。
+
+这次, 在account账户中添加了version字段, version列主要作用就是在每次执行update或者delete时都会增加, 并且在update和delete语句的where条件中也使用此列。为此, 我们需要version在执行update或者delete之前发出select并读取当前的值, 否则, 我们将不知道哪个版本值传递给where字句或进行递增。
