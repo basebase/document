@@ -437,6 +437,19 @@ public class OptimisticAndPessimisticLocking {
   * 竞争激烈(出现冲突概率大)时, 悲观锁更体现优势, 因为乐观锁在执行更新时频繁失败, 需要不断重试, 浪费CPU资源。
 
 
+综上:
+
+悲观锁更适合并发写入多的情况, 适用于临界区持有锁时间比较长的情况, 悲观锁可以避免大量的无用自旋消耗, 考虑下面情况：
+  * 临界区有I/O操作
+  * 临界区代码复杂或者长时间等待循环等
+
+如果此时使用乐观锁的话, 那么会一直自旋消耗我们的CPU资源, 效率甚至比悲观锁更糟糕。
+
+
+乐观锁更适合并发读取的场景, 不加锁的特点能够使读操作的性能大幅提升。而在读操作中使用悲观锁无疑是徒增等待的烦恼...
+
+
+
 参考  
 
 [Optimistic vs. Pessimistic Locking](https://medium.com/@recepinancc/til-9-optimistic-vs-pessimistic-locking-79a349b76dc8)
