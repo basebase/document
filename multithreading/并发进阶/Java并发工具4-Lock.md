@@ -623,3 +623,9 @@ lock.getHoldCount();
 加锁会增加, 释放锁会减少。
 
 ![可重入锁&非可重入锁源码](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E5%8F%AF%E9%87%8D%E5%85%A5%E9%94%81&%E9%9D%9E%E5%8F%AF%E9%87%8D%E5%85%A5%E9%94%81%E6%BA%90%E7%A0%81.png?raw=true)
+
+参考:
+
+[可重入锁与自旋锁](https://kanonjz.github.io/2017/12/27/reentrantlock-and-spinlock/)
+
+[可重入锁和不可重入锁，递归锁和非递归锁](https://www.cnblogs.com/edison20161121/p/10293156.html)
