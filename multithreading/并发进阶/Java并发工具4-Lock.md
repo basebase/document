@@ -459,3 +459,25 @@ public class OptimisticAndPessimisticLocking {
 [【BAT面试题系列】面试官：你了解乐观锁和悲观锁吗？](https://www.cnblogs.com/kismetv/p/10787228.html)
 
 [面试必备之乐观锁与悲观锁](https://juejin.im/post/5b4977ae5188251b146b2fc8)
+
+
+##### 可重入锁与非可重入锁
+
+下面我会对可重入锁与非可重入锁进行以下方面介绍:
+  * 可重入锁&非可重入锁概念介绍
+  * 可重入锁&非可重入锁执行流程
+  * 具体代码展示
+  * Java可重入锁&非可重入锁实现原理介绍
+
+###### 什么是可重入锁? 什么是非可重入锁?
+
+可重入锁又被称为
+**递归锁**, 是指在同一个线程在外层方法获取锁的时候, 在进入该线程的内层方法会自动获取锁(前提锁对象是同一个对象或者class), 不会因为之前已经获取过还没有释放而阻塞。在Java中ReentrantLock和synchronized都是可重入锁, 可重入锁的一个优点是可以一定程度上避免死锁。
+
+非可重入锁, 在同一个线程中在外层方法获取锁的时候, 执行调用另外一个方法, 那么在调用之前需要将所持有的锁释放掉, 实际上该对象锁已经被当前线程所持有, 且无法释放, 所以会出现死锁。
+
+###### 可重入锁&非可重入锁执行流程
+
+![可重入锁](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E5%8F%AF%E9%87%8D%E5%85%A5%E9%94%81.png?raw=true)
+
+![非可重入锁](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E9%9D%9E%E5%8F%AF%E9%87%8D%E5%85%A5%E9%94%81.png?raw=true)
