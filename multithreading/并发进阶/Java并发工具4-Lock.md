@@ -600,3 +600,26 @@ class MyLock {
 ![可重入锁](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E5%8F%AF%E9%87%8D%E5%85%A5%E9%94%81.png?raw=true)
 
 ![非可重入锁](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E9%9D%9E%E5%8F%AF%E9%87%8D%E5%85%A5%E9%94%81.png?raw=true)
+
+
+###### Java可重入锁&非可重入锁实现原理介绍
+
+之前我们说过ReentrantLock和synchronized都是重入锁, 那么我们通过重入锁ReentrantLock以及非可重入锁[NonReentrantLock](https://github.com/netty/netty/blob/686ef795f904da5ec4a8be063852ceaf9b099b86/src/main/java/org/jboss/netty/util/internal/NonReentrantLock.java)(非JDK源码)的源码对比分析一下为什么非可重入锁在重复调用同步资源时会出现死锁。
+
+首先ReentrantLock和NonReentrantLock都继承了父类AQS, 其父类AQS中维护了一个同步状态status来计数重入次数, status初始值为0。
+
+当线程尝试获取锁时, 可重入锁先尝试获取并更新state值, state == 0 表示没有其它线程在执行同步代码块, 则把state设置为1, 当前线程开始执行。如果state != 0, 则判断当前线程是否是获取到这个锁的线程, 如果是执行state + 1, 且当前线程可以再次获取锁。
+
+而非可重入锁是直接去获取并尝试更新当前state的值, 如果state != 0的话会导致其获取锁失败, 当前线程阻塞。
+
+释放锁时, 可重入锁同样先获取当前state的值, 在当前线程是持有锁的线程的前提下。如果state - 1 == 0, 则表示当前线程所有重复获取锁的操作都已经执行完毕, 然后该线程才会真正的释放锁。而非可重入锁是在确定当前线程是持有锁的线程后, 直接将state设置为0, 将锁释放。
+
+
+对于ReentrantLock如何获取state的次数, 我们可以通过getHoldCount()方法获取
+```java
+private static ReentrantLock lock = new ReentrantLock();
+lock.getHoldCount();
+```
+加锁会增加, 释放锁会减少。
+
+![可重入锁&非可重入锁源码](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E5%8F%AF%E9%87%8D%E5%85%A5%E9%94%81&%E9%9D%9E%E5%8F%AF%E9%87%8D%E5%85%A5%E9%94%81%E6%BA%90%E7%A0%81.png?raw=true)
