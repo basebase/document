@@ -604,9 +604,9 @@ class MyLock {
 
 ###### Java可重入锁&非可重入锁实现原理介绍
 
-之前我们说过ReentrantLock和synchronized都是重入锁, 那么我们通过重入锁ReentrantLock以及非可重入锁[NonReentrantLock](https://github.com/netty/netty/blob/686ef795f904da5ec4a8be063852ceaf9b099b86/src/main/java/org/jboss/netty/util/internal/NonReentrantLock.java)(非JDK源码)的源码对比分析一下为什么非可重入锁在重复调用同步资源时会出现死锁。
+之前我们说过ReentrantLock和synchronized都是可重入锁, 那么我们通过可重入锁ReentrantLock以及非可重入锁[NonReentrantLock](https://github.com/netty/netty/blob/686ef795f904da5ec4a8be063852ceaf9b099b86/src/main/java/org/jboss/netty/util/internal/NonReentrantLock.java)(非JDK源码)的源码对比分析一下为什么非可重入锁在重复调用同步资源时会出现死锁。
 
-首先ReentrantLock和NonReentrantLock都继承了父类AQS, 其父类AQS中维护了一个同步状态status来计数重入次数, status初始值为0。
+首先ReentrantLock和NonReentrantLock都继承了父类AQS, 其父类AQS中维护了一个同步状态state来计数重入次数, state初始值为0。
 
 当线程尝试获取锁时, 可重入锁先尝试获取并更新state值, state == 0 表示没有其它线程在执行同步代码块, 则把state设置为1, 当前线程开始执行。如果state != 0, 则判断当前线程是否是获取到这个锁的线程, 如果是执行state + 1, 且当前线程可以再次获取锁。
 
