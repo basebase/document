@@ -664,5 +664,78 @@ lock.getHoldCount();
 ![非公平锁](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E9%9D%9E%E5%85%AC%E5%B9%B3%E9%94%81.png?raw=true)
 
 对于非公平锁, 管理员对打水的人没有要求。即使等待队伍里有排队等待的人,
-但如果上一个人刚打完水把锁还给管理员并且管理员还没有允许等待队伍里下一个人去打水时,刚好来了一个插队的人, 
+但如果上一个人刚打完水把锁还给管理员并且管理员还没有允许等待队伍里下一个人去打水时,刚好来了一个插队的人,
 这个插队的人是可以直接从管理员手里拿到锁去打水, 不需要排队, 原本排队等待的人只能继续等待。
+
+
+###### 公平锁和非公平锁实例
+还是以我们的ReentrantLock为例进行展示。在我们创建ReentrantLock实例的时候可以传入一个布尔值的参数, true代表公平锁, false为非公平锁。
+
+
+```java
+
+/***
+ *      描述:     公平锁&非公平锁展示
+ */
+public class FairAndNonFairLockExample {
+//    private static Lock lock = new ReentrantLock(true);
+    private static Lock lock = new ReentrantLock(false);
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 10; i++) {
+            new Thread(task(), "Thread-" + i).start();
+        }
+    }
+
+    private static Runnable task() {
+        return () -> {
+            try {
+                lock.lock();
+                System.out.println(Thread.currentThread().getName() + "获取到锁...");
+                System.out.println(Thread.currentThread().getName() + " 开始打水...");
+                long ms = new Random().nextInt(5);
+                System.out.println(Thread.currentThread().getName() + " 需要 " + ms + "秒打水完成");
+                Thread.sleep(ms * 1000);
+                System.out.println(Thread.currentThread().getName() + " 打水完成, 释放锁...");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                lock.unlock();
+            }
+
+            /***
+             *  或许打完一次水, 还想在继续打一次水
+             */
+            try {
+                lock.lock();
+                System.out.println(Thread.currentThread().getName() + "获取到锁...");
+                System.out.println(Thread.currentThread().getName() + " 开始打水...");
+                long ms = new Random().nextInt(5);
+                System.out.println(Thread.currentThread().getName() + " 需要 " + ms + "秒打水完成 ");
+                Thread.sleep(ms * 1000);
+                System.out.println(Thread.currentThread().getName() + " 打水完成, 释放锁...");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                lock.unlock();
+            }
+        };
+    }
+}
+```
+
+上面的例子中, 如果使用公平锁执行的话, 是Thread-0到Thread-9分别执行完后, 然后在进行第二次的获取锁依旧是Thread-0到Thread-9。
+但如果是非公平锁的话, 执行结果通常是每次释放锁后可以再次的获取锁并执行, 而不像公平锁一样顺序执行。
+
+但是, 需要注意的是
+```java
+tryLock()
+```
+方法, 它是非公平的方式获取锁, 也就是说无论是在构造参数中创建锁为公平锁也不会按照公平锁的方式进行。
+
+###### 优缺点介绍
+
+|  锁   | 优点  | 缺点  |
+|  ----  | ----  | ----  |
+| 公平锁  | 线程不会饿死 | 吞吐率低,开销大  |
+| 非公平锁  | 吞吐率高 |  线程存在饿死的可能 |
