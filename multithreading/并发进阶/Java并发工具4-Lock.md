@@ -636,6 +636,7 @@ lock.getHoldCount();
   * 公平锁和非公平锁概念介绍
   * 公平锁和非公平锁图解流程
   * 公平锁和非公平锁例子展示
+  * 公平锁和非公平锁源码简述
   * 优缺点介绍
 
 
@@ -752,6 +753,36 @@ public class FairAndNonFairLockExample {
 tryLock()
 ```
 方法, 它是非公平的方式获取锁, 也就是说无论是在构造参数中创建锁为公平锁也不会按照公平锁的方式进行。
+
+###### 公平锁和非公平锁源码简述
+
+这里, 主要就是简单的介绍一下ReentrantLock类的公平锁和非公平锁的实现不同点, 并非是实现的源码分析。
+
+当我们创建ReentrantLock类, 它的构造方法中有FairSync和NonfairSync两个子类, 它两继承自Sync类, 而Sync继承AQS。
+
+ReentrantLock默认使用非公平锁, 通过上面的学习我们也可以指定为公平锁。
+
+```java
+public ReentrantLock() {
+     sync = new NonfairSync();
+ }
+
+public ReentrantLock(boolean fair) {
+    sync = fair ? new FairSync() : new NonfairSync();
+}
+```
+
+下面两张图展示公平锁与非公平锁的加锁方法源码:
+![公平锁源码](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E5%85%AC%E5%B9%B3%E9%94%81%E6%BA%90%E7%A0%81.png?raw=true)
+![非公平锁源码](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E9%9D%9E%E5%85%AC%E5%B9%B3%E9%94%81%E6%BA%90%E7%A0%81.png?raw=true)
+
+通过图中的源码对比, 可以很明显的看出公平锁与非公平锁的lock()方法唯一的区别在于公平锁在获取同步状态时多了一个限制条件: hasQueuedPredecessors()
+
+![hasQueuedPredecessors方法](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E7%AD%89%E5%BE%85%E9%98%9F%E5%88%97.png?raw=true)
+
+进入hasQueuedPredecessors()方法, 可以看到该方法主要做一件事情: 判断当前线程是否位于同步队列中的第一个。如果是则返回true, 否则返回false。
+
+综上, 公平锁是通过同步队列来实现多个线程按照申请锁的顺序来获取锁, 从而实现公平的特性。非公平锁加锁时不考虑排队等待问题, 直接尝试获取锁, 所以存在后申请却先获取到锁的情况。
 
 ###### 优缺点介绍
 
