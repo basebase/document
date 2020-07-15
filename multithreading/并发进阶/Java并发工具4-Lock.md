@@ -812,3 +812,85 @@ public ReentrantLock(boolean fair) {
 通过上图可以看到, 当有对个线程要对一个共享资源加锁的时候, 如果要对资源进行写的时候, 那么就加排它锁, 任何线程都不能读取, 但是, 当线程都是只读状态不会对资源做出修改这个时候, 可以多个线程一起去读取里面的内容。
 
 我们发现, 当一个线程在写的时候, 其它线程不能读。当一个或多个线程在读, 其它线程就不能写, 只有读的时候可以有多个线程一起。否则都是形成互斥关系。
+
+
+###### 排它锁和共享锁例子
+我们通过ReentrantReadWriteLock类, 来实现一个具体的读写例子。
+
+这里, 我们要注意, 读写锁是
+**一把锁**, 它不是两把锁, 别看我创建出两个对象。
+
+当我们使用WriteLock的时候, ReadLock肯定是不能用的。当我们用ReadLock则WriteLock也是无法使用的。只有线程都是ReadLock才可以一起获取。
+
+而且, 很多人会有疑问, 为什么还需要读锁? 读数据还需要加锁吗? 我又不修改数据, 没错, 但是要考虑如果在读取数据的过程中数据进行了更新, 那么你读取出来的数据还是对的吗? 可以对比例子ReadWriteLockExample2.java就会发现其中最为致命的问题。
+当运行ReadWriteLockExample2.java的时候, 你就会觉得ReentrantReadWriteLock确实是一把锁, 否则数据会乱套。
+
+```java
+/***
+ *
+ *      描述:     共享锁和排它锁使用例子
+ *                  这里, 我们的读锁就是共享锁。写锁就是排它锁
+ *
+ *               对比参考例子ReadWriteLockExample2.java
+ */
+public class ReadWriteLockExample {
+
+    private static ReentrantReadWriteLock reentrantReadWriteLock =
+            new ReentrantReadWriteLock();
+    // 读锁
+    private static ReentrantReadWriteLock.ReadLock readLock = reentrantReadWriteLock.readLock();
+
+    // 写锁
+    private static ReentrantReadWriteLock.WriteLock writeLock = reentrantReadWriteLock.writeLock();
+
+    private static int amount = 0;
+
+    public static void main(String[] args) {
+        new Thread(writeTask(), "Thread-A").start();
+        new Thread(readTask(), "Thread-B").start();
+        new Thread(readTask(), "Thread-C").start();
+        new Thread(readTask(), "Thread-D").start();
+        new Thread(writeTask(), "Thread-E").start();
+        new Thread(readTask(), "Thread-F").start();
+        new Thread(writeTask(), "Thread-G").start();
+        new Thread(readTask(), "Thread-H").start();
+        new Thread(readTask(), "Thread-I").start();
+    }
+
+    private static Runnable readTask() {
+        return () -> {
+            readLock.lock();
+            try {
+                System.out.println(Thread.currentThread().getName() + " 获取到读锁");
+                int random = new Random().nextInt(4) + 1;
+                System.out.println(Thread.currentThread().getName() + " 读取数据, 需要" + random + " 秒");
+                Thread.sleep(random * 1000);
+                System.out.println(Thread.currentThread().getName() + " 读取数据值为: " + amount);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                readLock.unlock();
+            }
+        };
+    }
+
+    private static Runnable writeTask() {
+        return () -> {
+            writeLock.lock();
+            try {
+                System.out.println(Thread.currentThread().getName() + " 获取到写锁");
+                int random = new Random().nextInt(4) + 1;
+                System.out.println(Thread.currentThread().getName() + " 更新数据, 需要" + random + " 秒");
+                Thread.sleep(random * 1000);
+                amount += 10;
+                System.out.println(Thread.currentThread().getName() + " 更新数据完成...");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                writeLock.unlock();
+            }
+        };
+    }
+
+}
+```
