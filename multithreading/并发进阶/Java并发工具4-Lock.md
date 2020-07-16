@@ -1064,3 +1064,52 @@ public class ReadWriteLockExample4 {
 
 我们在通过一个执行流程图看看具体是如何做的:
 ![读写锁之读锁可插队](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E4%B9%8B%E8%AF%BB%E9%94%81%E5%8F%AF%E6%8F%92%E9%98%9F.png?raw=true)
+
+
+以上就是对不可插队和可插队的例子展示。但是, 如果我们把可插队的例子换成是公平的形式呢?
+又会有什么不一样的结果?
+
+其实, 我们在分析源码的过程中就得知, 如果使用公平的方式去创建我们的读写锁, 那么只要等待队列不
+为空, 就一定会把任务放入等待队列中的。基于这个原则, 即使我们等待队列头结点是读锁线程, 依旧是
+不可以插队的, 而是会按照等待队列的顺序去执行我们的线程任务。
+
+当然, 为了验证上面说的是否正确, 我们还是会给出具体的例子, 并看一看输出的结果是不是按照我们
+提交线程任务的顺序输出的呢。
+
+使用公平的方式创建读写锁, 不会出现插队现象例子:
+
+```java
+/***
+ *
+ *      描述:     读写锁, 使用公平的方式创建不允许任何线程插队执行
+ */
+public class ReadWriteLockExample5 {
+    // 创建一个公平的读写锁
+    private static ReentrantReadWriteLock reentrantReadWriteLock =
+            new ReentrantReadWriteLock(true);
+
+    public static void main(String[] args) {
+        new Thread(writeTask(), "Thread-A").start();
+        new Thread(readTask(), "Thread-B").start();
+        new Thread(readTask(), "Thread-C").start();
+        new Thread(writeTask(), "Thread-D").start();
+        new Thread(readTask(), "Thread-E").start();
+
+        new Thread(() -> {
+            for (int i = 0; i < 1000; i++) {
+                new Thread(readTask(), "Child-" + i).start();
+            }
+        }).start();
+
+    }
+}
+```
+
+
+![读写锁之公平下永远无法插队例子图1](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E4%B9%8B%E5%85%AC%E5%B9%B3%E4%B8%8B%E6%B0%B8%E8%BF%9C%E6%97%A0%E6%B3%95%E6%8F%92%E9%98%9F%E4%BE%8B%E5%AD%90%E5%9B%BE1.png?raw=true)
+
+从这张图可以看到, 当线程Thread-A释放锁之后, 即使等待队列队首是读锁线程, 新提交的线程任然无法获取到锁。都是在尝试获取锁。
+
+![读写锁之公平下永远无法插队例子图2](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E4%B9%8B%E5%85%AC%E5%B9%B3%E4%B8%8B%E6%B0%B8%E8%BF%9C%E6%97%A0%E6%B3%95%E6%8F%92%E9%98%9F%E4%BE%8B%E5%AD%90%E5%9B%BE2.png?raw=true)
+
+而等到我们线程Thread-E结束后, 按照等待顺序的线程依次获取到读锁并执行。
