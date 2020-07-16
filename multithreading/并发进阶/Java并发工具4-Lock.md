@@ -961,3 +961,28 @@ public class ReadWriteLockExample {
 ![读写锁插队策略源码3](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E6%8F%92%E9%98%9F%E7%AD%96%E7%95%A5%E6%BA%90%E7%A0%813.png?raw=true)
 
 而我们的非公平策略, 在获取写锁的线程允许插入, 而获取读锁的线程则判断等待队列中的队首线程是否为读锁线程, 如果不是则进入等待队列中, 否则直接插队执行。
+
+
+对于上面源码分析完后, 我们提供两个读例子, 一个不可以插队, 一个可以插队。
+
+
+对于不可以插队是比较容易模拟的, 我们先来看一个不可以插队的例子。
+
+```java
+
+// readTask/writeTask方法参考ReadWriteLockExample
+
+/***
+ *
+ *      描述:     读写锁, 读不可以插队
+ */
+public class ReadWriteLockExample3 {
+    public static void main(String[] args) {
+        new Thread(writeTask(), "Thread-A").start();
+        new Thread(readTask(), "Thread-B").start();
+        new Thread(readTask(), "Thread-C").start();
+        new Thread(writeTask(), "Thread-D").start();
+        new Thread(readTask(), "Thread-E").start();
+    }
+}
+```
