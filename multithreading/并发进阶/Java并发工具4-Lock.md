@@ -966,7 +966,7 @@ public class ReadWriteLockExample {
 对于上面源码分析完后, 我们提供两个读例子, 一个不可以插队, 一个可以插队。
 
 
-对于不可以插队是比较容易模拟的, 我们先来看一个不可以插队的例子。
+对于不可插队是比较容易模拟的, 我们先来看一个不可以插队的例子。
 
 ```java
 
@@ -986,3 +986,26 @@ public class ReadWriteLockExample3 {
     }
 }
 ```
+
+对于这个例子, 我们先来通过大脑思考一下执行的一个流程, 之后在以图的方式展出。
+
+
+1. 首先Thread-A获取到写锁, 执行过程中, Thread-B, Thread-C, Thread-D, Thread-E分别启动
+但是发现Thread-A持有写锁, 纷纷进入等待队列中;
+
+2. 当Thread-A线程释放写锁后, 紧接着Thread-B和Thread-C可以一起使用读锁, 而由于当前等待队列中的
+头结点是写锁, 所有Thread-E是无法插队执行的;
+
+3. 当Thread-B和Thread-C释放读锁后, 紧接着Thread-D获取写锁;
+
+4. 当Thread-D释放写锁后, 我们的读锁线程Thread-E才可以去执行读操作;
+
+更具上面分析的流程, 我们来运行程序看看是不是和我们设想的结果一直呢?
+  * 输出结果A: Thread-A -> Thread-B -> Thread-C -> Thread-D -> Thread-E
+  * 输出结果B: Thread-A -> Thread-B -> Thread-C -> Thread-E -> Thread-D
+
+如果认为是输出结果B的话, 请在从新看看本小结内容。
+
+下面, 我们来看看一个具体的执行流程图
+
+![读写锁之读锁不插队](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E4%B9%8B%E8%AF%BB%E9%94%81%E4%B8%8D%E6%8F%92%E9%98%9F.png?raw=true)
