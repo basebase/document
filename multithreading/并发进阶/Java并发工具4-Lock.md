@@ -799,6 +799,7 @@ public ReentrantLock(boolean fair) {
   * 排它锁和共享锁图解流程
   * 排它锁和共享锁例子
   * 读写锁插队策略
+  * 读写锁插队策略源码分析
 
 
 ###### 排它锁和共享锁概念介绍
@@ -943,3 +944,20 @@ public class ReadWriteLockExample {
 
 
 对于上面两种策略, 我们ReentrantReadWriteLock使用的是策略2。
+
+而对于写锁永远是允许插队的, 思考一下, 现在有A线程和B线程获取读锁, C线程是写锁线程它是没法插队成功的, 毕竟不能同时获取读锁和写锁所以会进入等待队列中, 假设线程A和线程B结束后, 线程C执行读锁, 此时又来了线程D要写入, 会发现线程C持有写锁那么线程D也只能进入等待队列。所以在设计的时候写锁是允许插队。
+
+
+###### 读写锁插队策略源码分析
+
+![读写锁插队策略源码1](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E6%8F%92%E9%98%9F%E7%AD%96%E7%95%A5%E6%BA%90%E7%A0%811.png?raw=true)
+
+读写锁默认也是使用非公平的策略
+
+![读写锁插队策略源码2](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E6%8F%92%E9%98%9F%E7%AD%96%E7%95%A5%E6%BA%90%E7%A0%812.png?raw=true)
+
+当我们使用公平的策略时, 所有有线程都会查看等待队列中是否有等待的线程, 如果有则进入等待队列中。
+
+![读写锁插队策略源码3](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E6%8F%92%E9%98%9F%E7%AD%96%E7%95%A5%E6%BA%90%E7%A0%813.png?raw=true)
+
+而我们的非公平策略, 在获取写锁的线程允许插入, 而获取读锁的线程则判断等待队列中的队首线程是否为读锁线程, 如果不是则进入等待队列中, 否则直接插队执行。
