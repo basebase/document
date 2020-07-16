@@ -1009,3 +1009,58 @@ public class ReadWriteLockExample3 {
 下面, 我们来看看一个具体的执行流程图
 
 ![读写锁之读锁不插队](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E4%B9%8B%E8%AF%BB%E9%94%81%E4%B8%8D%E6%8F%92%E9%98%9F.png?raw=true)
+
+
+下面, 我们在来看看如何实现一个可插队的例子, 其实想要插队你必须满足两个条件:
+  * 当前是读锁
+  * 等待队列的队首结点是读锁线程
+这两个条件缺一不可。
+
+假设我们的线程A先在正在写, 其它几个线程B,C,D,E线程都会进入等待队列中。
+当线程A释放写锁时我们的读锁线程B就会被CPU唤醒尝试获取读锁, 当线程B获取到读锁时候,
+此时等待队列中队首就是线程C是一个读锁线程。此时提交新的读锁线程任务是可以插队的。
+当然我们还有一种情况就是当线程A释放写锁的时候, 唤醒队列中的线程需要时间,
+但是线程B作为头结点也是一个读锁线程, 而我们此时提交新的读锁线程也是可以插队执行, 在线程B之前执行。
+
+
+说了这么多, 无非一点就是想要大家看到, 只有在等待队列是写锁时才可以插队执行。下面我们来看一个具体例子。
+
+```java
+
+/***
+ *
+ *      描述:     读写锁, 读可以插队
+ */
+public class ReadWriteLockExample4 {
+    public static void main(String[] args) {
+        new Thread(writeTask(), "Thread-A").start();
+        new Thread(readTask(), "Thread-B").start();
+        new Thread(readTask(), "Thread-C").start();
+        new Thread(writeTask(), "Thread-D").start();
+        new Thread(readTask(), "Thread-E").start();
+        // 这里是新增的...
+        new Thread(() -> {
+            /***
+             *      这里创建1000个线程去读取内容, 当Thread-A释放写锁之后, 就有机会执行了
+             */
+            for (int i = 0; i < 1000; i++) {
+                new Thread(readTask(), "Child-" + i).start();
+            }
+        }).start();
+    }
+}
+```
+
+那么此例子的输出的结果则是在Thread-A线程写锁释放之前是不会允许任何线程获取到读锁或者写锁的。
+只有当Thread-A释放写锁后会出现任务插队的现象。
+
+![读写锁之读锁可插队例子图1](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E4%B9%8B%E8%AF%BB%E9%94%81%E5%8F%AF%E6%8F%92%E9%98%9F%E4%BE%8B%E5%AD%90%E5%9B%BE1.png?raw=true)
+![读写锁之读锁可插队例子图2](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E4%B9%8B%E8%AF%BB%E9%94%81%E5%8F%AF%E6%8F%92%E9%98%9F%E4%BE%8B%E5%AD%90%E5%9B%BE2.png?raw=true)
+
+
+可以看到, 上面的执行结果和我们最开始描述差不多, 要么在CPU唤醒等待任务之前执行,
+要么在唤醒之后插队执行, 但是无论如何当线程C也获取到锁后, 等待队里的队首不在是一个读锁线程了,
+之后提交的任务又会进行等待。
+
+我们在通过一个执行流程图看看具体是如何做的:
+![读写锁之读锁可插队](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E4%B9%8B%E8%AF%BB%E9%94%81%E5%8F%AF%E6%8F%92%E9%98%9F.png?raw=true)
