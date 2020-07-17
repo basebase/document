@@ -1181,3 +1181,77 @@ public class ReadWriteLockExample6 {
 
 当运行这段程序后, 会发现程序会一直阻塞, 不会停止。证明锁无法升级。
 ![读写锁升级运行图](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E5%8D%87%E7%BA%A7%E8%BF%90%E8%A1%8C%E5%9B%BE.png?raw=true)
+
+```java
+/***
+ *
+ *      描述:     读写锁, 锁不能升级只能降级
+ */
+public class ReadWriteLockExample6 {
+
+    // 创建一个公平的读写锁
+    private static ReentrantReadWriteLock reentrantReadWriteLock =
+            new ReentrantReadWriteLock(false);
+    // 读锁
+    private static ReentrantReadWriteLock.ReadLock readLock = reentrantReadWriteLock.readLock();
+
+    // 写锁
+    private static ReentrantReadWriteLock.WriteLock writeLock = reentrantReadWriteLock.writeLock();
+
+    // 共享资源
+    private static int amount = 0;
+
+    public static void main(String[] args) throws InterruptedException {
+        new Thread(writeDowngradingTask(), "Thread-A").start();
+        new Thread(() -> {
+            for (int i = 0; i < 1000; i++) {
+                new Thread(readUpgradingTask(), "Child-" + i).start();
+            }
+        }).start();
+    }
+
+    private static Runnable writeDowngradingTask() {
+        return () -> {
+
+            System.out.println(Thread.currentThread().getName() + " 尝试获取写锁");
+            writeLock.lock();
+            try {
+                System.out.println(Thread.currentThread().getName() + " 获取到写锁");
+                Thread.sleep(10);
+                amount += 10;
+                System.out.println(Thread.currentThread().getName() + " 更新数据完成...");
+
+                System.out.println(Thread.currentThread().getName() + " 获取读锁之前金额为: " + amount);
+
+                System.out.println(Thread.currentThread().getName() + " 尝试降级为读锁");
+                readLock.lock();
+                System.out.println(Thread.currentThread().getName() + " 降级为读锁成功");
+
+                System.out.println(Thread.currentThread().getName() + " 降级为读锁后金额为: " + amount);
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                writeLock.unlock();
+                System.out.println(Thread.currentThread().getName() + " 成功释放写锁");
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                readLock.unlock();
+                System.out.println(Thread.currentThread().getName() + " 成功释放读锁");
+            }
+        };
+    }
+}
+```
+
+
+程序执行后, 可以从写锁降级为读锁。看看下面运行的结果图。
+
+![读写锁写锁降级1](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E5%86%99%E9%94%81%E9%99%8D%E7%BA%A71.png?raw=true)
+![读写锁写锁降级2](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E5%86%99%E9%94%81%E9%99%8D%E7%BA%A72.png?raw=true)
+![读写锁写锁降级3](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E5%86%99%E9%94%81%E9%99%8D%E7%BA%A73.png?raw=true)
+
+从最初的尝试获取读锁, 等到Thread-A释放写锁之后, 后面新插入的读锁线程都可以一起读取数据了。
