@@ -800,6 +800,7 @@ public ReentrantLock(boolean fair) {
   * 排它锁和共享锁例子
   * 读写锁插队策略
   * 读写锁插队策略源码分析
+  * 读写锁升降级
 
 
 ###### 排它锁和共享锁概念介绍
@@ -1113,3 +1114,70 @@ public class ReadWriteLockExample5 {
 ![读写锁之公平下永远无法插队例子图2](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E4%B9%8B%E5%85%AC%E5%B9%B3%E4%B8%8B%E6%B0%B8%E8%BF%9C%E6%97%A0%E6%B3%95%E6%8F%92%E9%98%9F%E4%BE%8B%E5%AD%90%E5%9B%BE2.png?raw=true)
 
 而等到我们线程Thread-E结束后, 按照等待顺序的线程依次获取到读锁并执行。
+
+
+###### 读写锁升降级
+
+对于读写锁我们是可以进行降级的, 不支持升级的。我们可以把写锁降级为读锁但是不可以把读锁升级为写锁。
+为什么不可以把读锁升级为写锁呢? 这个可能会导致死锁的发生。
+
+比如说, 现在有A,B,C,D,E线程都是读锁, 如果我们将其升级为写锁后, 没有释放掉之后可能会造成死锁的发生。
+毕竟不能像tryLock会自动释放持有的锁。
+
+那么降级就是可以的, 为什么呢? 首先读锁本身就是一个共享的。所有当线程降级为读锁后, 其它线程可以
+一起读取最新修改后的数据。
+
+但是锁的降级是在持有写锁后再加上读锁才称为降级, 而不是说先释放写锁然后在获取读锁这样会出现问题的。
+
+
+![读写锁升降级](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E5%8D%87%E9%99%8D%E7%BA%A7.png?raw=true)
+
+
+
+下面, 我们通过例子来看看当想把读锁升级为写锁会发生什么(肯定是不成功的), 以及如何把一个写锁降级为读锁的样例。
+
+```java
+/***
+ *
+ *      描述:     读写锁, 锁不能升级只能降级
+ */
+public class ReadWriteLockExample6 {
+    // 创建一个公平的读写锁
+    private static ReentrantReadWriteLock reentrantReadWriteLock =
+            new ReentrantReadWriteLock(false);
+    // 读锁
+    private static ReentrantReadWriteLock.ReadLock readLock = reentrantReadWriteLock.readLock();
+    // 写锁
+    private static ReentrantReadWriteLock.WriteLock writeLock = reentrantReadWriteLock.writeLock();
+    // 共享资源
+    private static int amount = 0;
+    public static void main(String[] args) throws InterruptedException {
+        new Thread(readUpgradingTask(), "Thread-B").start();
+    }
+    private static Runnable readUpgradingTask() {
+        return () -> {
+
+            System.out.println(Thread.currentThread().getName() + " 尝试获取读锁");
+            readLock.lock();
+            try {
+                System.out.println(Thread.currentThread().getName() + " 获取到读锁");
+                Thread.sleep(20);
+
+                System.out.println(Thread.currentThread().getName() + " 尝试升级为写锁");
+                writeLock.lock();
+                System.out.println(Thread.currentThread().getName() + " 升级为写锁成功");
+
+                System.out.println(Thread.currentThread().getName() + " 读取数据值为: " + amount);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                writeLock.unlock();
+                readLock.unlock();
+            }
+        };
+    }
+}
+```
+
+当运行这段程序后, 会发现程序会一直阻塞, 不会停止。证明锁无法升级。
+![读写锁升级运行图](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%AF%BB%E5%86%99%E9%94%81%E5%8D%87%E7%BA%A7%E8%BF%90%E8%A1%8C%E5%9B%BE.png?raw=true)
