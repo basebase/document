@@ -1275,7 +1275,6 @@ public class ReadWriteLockExample6 {
 
 这里主要介绍以下几个方面:
   * 自旋锁的概念
-  * 自旋锁原理
   * 如何实现一个自旋锁
   * 自旋锁优缺点
 
@@ -1288,3 +1287,68 @@ public class ReadWriteLockExample6 {
 而为了让当前线程"稍等一下", 就需要让当前线程进行自旋, 如果在自旋完成后前面锁定同步资源的线程已经释放了锁, 那么当前线程就可以不必阻塞而是直接获取同步资源, 从而避免切换线程的开销。这就是自旋锁。
 
 ![自旋锁](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E8%87%AA%E6%97%8B%E9%94%81.png?raw=true)
+
+
+###### 如何实现一个自旋锁
+对于自旋锁的实现原理也是基于CAS的, 但是这里不会重点介绍CAS。所以, 等学习过CAS后再反过来自己学习原理是很轻松的。
+但是, 我们要实现一个自旋锁却是基于CAS的。
+
+所以下面的例子会使用到原子类, 不清楚的话其实关系不大, 我个人认为自旋锁当前只要知道是如何去做的就可以了。
+
+```java
+/***
+ *
+ *
+ *      描述:     一个实现自旋锁的例子
+ */
+public class SpinLockExample {
+    // 利用原子引用类
+    private AtomicReference<Thread> cas = new AtomicReference<>();
+
+    public void lock() {
+        Thread curr = Thread.currentThread();
+        while (!cas.compareAndSet(null, curr)) {
+            System.out.println(Thread.currentThread().getName() + " 正在自旋中...");
+        }
+    }
+
+    public void unlock() {
+        Thread curr = Thread.currentThread();
+        cas.compareAndSet(curr, null);
+    }
+
+    public static void main(String[] args) {
+        SpinLockExample spinLock = new SpinLockExample();
+        Runnable runnable = () -> {
+            System.out.println(Thread.currentThread().getName() + " 开始尝试获取锁");
+            try {
+                spinLock.lock();
+                System.out.println(Thread.currentThread().getName() + "获取锁成功");
+                System.out.println(Thread.currentThread().getName() + " 开始执行业务方法");
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                System.out.println(Thread.currentThread().getName() + " 释放锁");
+                spinLock.unlock();
+            }
+        };
+
+        new Thread(runnable, "Thread-A").start();
+        new Thread(runnable, "Thread-B").start();
+        new Thread(runnable, "Thread-C").start();
+    }
+}
+```
+
+程序运行可以观察到, 只有一个线程能获取到锁, 其它线程都在进行自旋操作。当线程释放锁之后, 正在自旋的线程直到后会直接去获取资源锁。
+
+
+###### 自旋锁优缺点
+自旋锁有自身的优势也有缺点, 下面来看下都有哪些
+  * 优点
+    - 不释放CPU执行时间, 线程不用被阻塞和唤醒, 减少线程切换的开销
+  * 缺点
+    - 如果持有锁执行时间比较长, 自旋的操作也是会消耗CPU的, 如果时间越长开销越大, 形成一个线性增长。反而不好。
+
+基于上面的优缺点, 如果我们进入同步代码块执行执行很短那么是可以使用自旋锁的, 但如果进入同步代码块执行很长时间, 使用自旋锁只会白白浪费处理器的资源。
