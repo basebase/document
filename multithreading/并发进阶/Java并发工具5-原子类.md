@@ -202,3 +202,75 @@ public class AtomicRefExample {
 假设, 我们不启动Thread-A线程, 那么后面的线程启动都会出错, 为什么呢? 刚才我们说了compareAndSet()方法, 判断当前的值是否和expect相等。而AtomicReference原子引用类默认为null, 除了Thread-A线程数据初始化值为null, 其余线程都不为null。
 
 当比较的值不同, 所以也就不会使用update的值, 而下面的输出get()获取到的还是null值而不是update的值。进而抛出空指针异常。
+
+
+##### Atomic升级类型例子展示
+该类型下可以让普通的字段拥有原子操作, 比如AtomicIntegerFieldUpdater可以让一个int变量变为一个原子更新。
+但是, 我们不是已经学习过AtomicInteger了吗？它不就是原子操作的吗？
+
+是的, 为此通常在满足下面一项或者两项要求时使用:
+  * 变量不必始终通过原子类的get或者set方法来引用它, 但是有些时候需要原子的get或者set操作。
+  * 创建大量的给定类型, 但是并不希望每个实例都必须为了原子访问而在其中多嵌入一个额外对象。
+
+
+```java
+/***
+ *      描述:     AtomicIntegerFieldUpdater例子
+ */
+
+public class AtomicIntegerFieldUpdaterExample {
+    static AtomicIntegerFieldUpdater<Preson> updater =
+            AtomicIntegerFieldUpdater.newUpdater(Preson.class, "score");
+
+    static Preson p1 = new Preson();
+    static Preson p2 = new Preson();
+
+    public static void main(String[] args) throws InterruptedException {
+        Thread t1 = new Thread(task(), "Thread-A");
+        Thread t2 = new Thread(task(), "Thread-B");
+
+        t1.start();
+        t2.start();
+
+        t1.join();
+        t2.join();
+
+        System.out.println("非原子操作变量: " + p1.score);
+        System.out.println("升级原子操作变量: " + p2.score);
+    }
+
+    public static Runnable task() {
+        return () -> {
+            for (int i = 0; i < 1000; i++) {
+                p1.score ++;
+                updater.getAndIncrement(p2);
+            }
+        };
+    }
+}
+
+
+class Preson {
+    volatile int score;
+}
+```
+
+输出结果我们升级为原子操作的p2的score值一定为2000, 而我们的p1对象则不能确定。
+AtomicIntegerFieldUpdater.newUpdater()的创建是通过反射的机制, 把我们要升级字段的class类传入以及要升级的字段名"score"。
+
+字段升级需要注意的下面几点:
+  * 要被升级的字段不支持static
+  * 必须使用volatile修饰
+  * 如果变量设置为private即不可见, 即使提供了get和set方法
+
+而使用AtomicIntegerFieldUpdater则非常简单, 我们调用方法仅需要把要升级的对象引入传入即可。
+
+
+回头来看, 如果我们创建很多Preson对象, score字段都使用AtomicInteger但又不是经常使用原子特性的话, 也是比较占用内存开销的一件事。
+
+假设现在创建很多Preson对象想使用原子操作, 我们仅仅只需要对其升级即可。而不需要创建一个原子变量。
+
+参考:
+  * [Atomic field updaters](https://www.javamex.com/tutorials/synchronization_concurrency_7_atomic_updaters.shtml)
+
+  * [一直使用AtomicInteger？试一试FiledUpdater](http://blog.itpub.net/31555607/viewspace-2660998/)
