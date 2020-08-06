@@ -359,3 +359,43 @@ public class LongAdderExample {
 ```
 
 当此程序运行后, 如果我们把提交的任务按照10的倍数减少的话, 可以看到AtomicLong的性能远远是高于LongAdder的, 但是如果提交的任务数量多了之后, LongAdder的优势就会发挥出来了。
+
+对于LongAdder高效的原理, 可以参考其他文章。
+
+[Java 8 Performance Improvements: LongAdder vs AtomicLong](http://blog.palominolabs.com/2014/02/10/java-8-performance-improvements-longadder-vs-atomiclong/index.html)
+
+
+
+#### Java Accumulator累加器实例
+
+对于该累加器可以作为LongAdder累加器的一个增强, 其可以自定义方法, 在高并发环境下计算想要的结果集。
+
+```java
+
+/***
+ *      描述:     Accumulator使用例子
+ */
+public class LongAccumulatorExample {
+
+    public static void main(String[] args) {
+
+        LongAccumulator longAccumulator = new LongAccumulator((x, y) -> {
+            System.out.println("x -> " + x + " y -> " + y);
+            return x + y;
+        }, 0);
+
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(20);
+        IntStream.range(1, 10)
+                .forEach(x -> {
+                    executorService.execute(() -> longAccumulator.accumulate(x));
+                });
+
+        executorService.shutdown();
+        while (!executorService.isTerminated()) {
+
+        }
+        System.out.println("结果为: " + longAccumulator.getThenReset());
+    }
+}
+```
