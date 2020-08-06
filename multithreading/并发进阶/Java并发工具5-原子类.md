@@ -274,3 +274,88 @@ AtomicIntegerFieldUpdater.newUpdater()的创建是通过反射的机制, 把我�
   * [Atomic field updaters](https://www.javamex.com/tutorials/synchronization_concurrency_7_atomic_updaters.shtml)
 
   * [一直使用AtomicInteger？试一试FiledUpdater](http://blog.itpub.net/31555607/viewspace-2660998/)
+
+
+#### Java LongAdder累加器实例
+
+LongAdder是在JDK8引入的, 在高并发环境下其效率比AtomicLong更高。那使用LongAdder可以替换AtomicLong吗?  
+显然还是不够的, 为什么?
+  1. LongAdder提供的方法还是比较少的, 更多用于收集统计数据。可以看到只有add()和decrement()两方法
+  2. 在并非激烈的线程环境下或许AtomicLong比LongAdder更优或者效率相当。
+
+
+
+```java
+/***
+ *
+ *      描述:     LongAdder累加器例子
+ */
+
+public class LongAdderExample {
+
+
+    static LongAdder add = new LongAdder();
+    static AtomicLong atomicLong = new AtomicLong(0);
+
+    public static void main(String[] args) {
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(100);
+
+        long start = System.currentTimeMillis();
+
+        for (int i = 0; i < 10000; i++) {
+            executorService.execute(task());
+        }
+
+        executorService.shutdown();
+
+        while (!executorService.isTerminated()) {
+            //
+        }
+
+        long end = System.currentTimeMillis();
+
+        System.out.println("LongAdder消耗时长为: " + (end - start) + " 结果为: " + add.sum());
+
+        executorService =
+                Executors.newFixedThreadPool(100);
+        start = System.currentTimeMillis();
+
+        for (int i = 0; i < 10000; i++) {
+            executorService.execute(task2());
+        }
+
+        executorService.shutdown();
+
+        while (!executorService.isTerminated()) {
+            //
+        }
+
+        end = System.currentTimeMillis();
+
+        System.out.println("AtomicLong消耗时长为: " + (end - start) + " 结果为: " + atomicLong.get());
+
+
+
+    }
+
+    public static Runnable task() {
+        return () -> {
+            for (int i = 0; i < 10000; i++) {
+                add.decrement();
+            }
+        };
+    }
+
+
+    public static Runnable task2() {
+        return () -> {
+            for (int i = 0; i < 10000; i++) {
+                atomicLong.incrementAndGet();
+            }
+        };
+    }
+}
+```
+
+当此程序运行后, 如果我们把提交的任务按照10的倍数减少的话, 可以看到AtomicLong的性能远远是高于LongAdder的, 但是如果提交的任务数量多了之后, LongAdder的优势就会发挥出来了。
