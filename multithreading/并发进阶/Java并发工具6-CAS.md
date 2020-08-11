@@ -73,6 +73,8 @@ V = B
 上面就是一个CAS的执行流程, 简而言之, 当多个线程尝试使用CAS同时更新一个变量时, 其中一个线程更新成功其余线程都将失败。
 其余更新失败的线程可以进行重试又或者什么都不处理。
 
+![cas更新数据](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/cas-01.png?raw=true)
+
 
 #### 参考
 [Java Compare and Swap Example – CAS Algorithm](https://howtodoinjava.com/java/multi-threading/compare-and-swap-cas-algorithm/)
