@@ -189,10 +189,105 @@ public class Counter2 {
 
 这里实现的就是我们自己编写的CAS算法, 最终的结果集也是正确的。
 
+
+#### CAS存在的问题
+
+虽然CAS提供了无锁的算法, 但是也有自身的缺点:
+1. ABA问题:  
+  ABA存在于无锁算法中常见的一个问题, 可表述为:
+    * 进程P1读取一个数值A;
+    * P1被挂起(时间片耗尽, 中断等), 进程P2开始执行;
+    * P2修改数值A为数值B, 然后又修改回A;
+    * P1被唤醒, 比较后发现数值A没有变化, 程序继续;
+
+2. 循环时间开销大, 自旋CAS如果长时间不成功, 会给CPU带来非常大的执行开销。
+
+3. 只能保证一个共享变量的原子操作, 当对一个共享变量执行操作时, 可以使用循环CAS的方式保证原子操作, 但是对于多个共享变量操作时, CAS就无法保证操作的原子性。
+
+
+
+这里, 我提供一个会引起ABA问题的例子。仅供参考:
+
+```java
+/***
+ *      描述:     ABA问题
+ */
+public class ABAExample {
+
+    public static AtomicInteger cas = new AtomicInteger(0);
+
+    public static void main(String[] args) throws InterruptedException {
+        Thread t1 = new Thread(task1(0, 1), "Thread-A");
+        Thread t2 = new Thread(task2(0, 2), "Thread-B");
+
+        t1.start();
+        t2.start();
+
+        t1.join();
+        t2.join();
+
+        System.out.println("最终的结果为: " + cas.get());
+    }
+
+    public static Runnable task1(int expect, int update) {
+        return () -> {
+            System.out.println(Thread.currentThread().getName() + " 开始执行程序...");
+            int random = new Random().nextInt(6) + 1;
+
+            System.out.println(Thread.currentThread().getName() + " 程序执行需要: " + random + " 秒");
+            try {
+                Thread.sleep(random * 1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            while (!cas.compareAndSet(expect, update)) {
+            }
+
+            System.out.println(Thread.currentThread().getName() + " 输出结果为: " + cas.get());
+        };
+    }
+
+
+    public static Runnable task2(int expect, int update) {
+        return () -> {
+            System.out.println(Thread.currentThread().getName() + " 开始执行程序...");
+            int random = new Random().nextInt(1) + 1;
+            System.out.println(Thread.currentThread().getName() + " 程序执行需要: " + random + " 秒");
+            try {
+                Thread.sleep(random * 1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            while (!cas.compareAndSet(expect, update)) {
+
+            }
+
+            System.out.println(Thread.currentThread().getName() + " 当前结果为: " + cas.get());
+
+            System.out.println(Thread.currentThread().getName() + " 开始消费金额 ");
+            for (int i = 0; i < 2; i++) {
+                cas.decrementAndGet();
+            }
+
+            System.out.println(Thread.currentThread().getName() + " 消费和的金额为: " + cas.get());
+        };
+    }
+}
+```
+
+最终的结果会输出1, 但是我们的线程Thread-B已经修改过数值了, 当线程Thread-A从阻塞中醒来后发现还是原来的值0时其实早就不是之前的值的了。
+
 #### 参考
+
+[比较并交换](https://zh.wikipedia.org/wiki/%E6%AF%94%E8%BE%83%E5%B9%B6%E4%BA%A4%E6%8D%A2)
+
 [Java Compare and Swap Example – CAS Algorithm](https://howtodoinjava.com/java/multi-threading/compare-and-swap-cas-algorithm/)
 
 [Java 101: Java concurrency without the pain, Part 2](https://www.infoworld.com/article/2078848/java-concurrency-java-101-the-next-generation-java-concurrency-without-the-pain-part-2.html?page=3)
+
+[The ABA Problem in Concurrency](https://www.baeldung.com/cs/aba-concurrency)
 
 [非阻塞同步算法与CAS(Compare and Swap)无锁算法](https://www.cnblogs.com/mainz/p/3546347.html)
 
