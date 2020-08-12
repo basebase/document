@@ -76,6 +76,119 @@ V = B
 ![cas更新数据](https://github.com/basebase/img_server/blob/master/%E5%A4%9A%E7%BA%BF%E7%A8%8B/cas-01.png?raw=true)
 
 
+#### 模拟CAS
+
+前面已经基本上了解了CAS的原理, 下面我们就动手实现一个自己的CAS算法。
+其实按照上面的CAS三个步骤实现一个CAS并非难事。
+
+现在, 我们就要实现实现一个数值累加器的程序, 在实现之前, 我们使用synchronized来完成原子和可见性。
+
+```java
+/***
+ *
+ *      描述:     非CAS累加变量, 基于synchronized
+ */
+
+public class Counter1 {
+
+    private int value = 0;
+
+    /***
+     *
+     * 使用synchronized将导致过多的上下文切换, 性能消耗大。
+     */
+
+    public synchronized int getValue() {
+        return value;
+    }
+
+    public synchronized int increment() {
+        return ++ value;
+    }
+}
+```
+
+上面的程序可以实现我们的数值累加但是并非使用CAS算法实现。我们需要将其改进。
+
+创建一个CAS的类, 实现CAS算法核心逻辑。
+```java
+/***
+ *      描述:     模拟CAS执行
+ */
+public class EmulatedCAS {
+
+    private int value = 0;
+
+    public synchronized int getValue() {
+        return value;
+    }
+
+    /***
+     * 此方法就是一个CAS的实现算法, 判断传入的预期值是否和当前的value值一样, 如果一样则更新value并返回上一次内存结果值
+     * 这里需要使用synchronized来完成原子和可见性的操作, 否则多个线程执行会出现问题。
+     *
+     * 我们假设底层是非synchronized实现的即可。
+     * @param expectedValue
+     * @param newValue
+     * @return
+     */
+    public synchronized int compareAndSwap(int expectedValue, int newValue) {
+        int readValue = value;
+        if (expectedValue == readValue) {
+            value = newValue;
+        }
+
+        return readValue;
+    }
+}
+```
+
+当我们调用compareAndSwap()方法时, 就需要传入预期值A和更新的值B了。如果有一个线程更新成功, 其它线程读取的还是上一次的旧值, 但是在处理这块逻辑则是由用户自行编写的, 可以循环直到正确。
+
+我们CAS类编写好后, 在重新编写一个累加的程序。
+
+```java
+/***
+ *
+ *      描述:     使用CAS算法累加变量
+ */
+public class Counter2 {
+
+    private EmulatedCAS value = new EmulatedCAS();
+
+    public int getValue() {
+        return value.getValue();
+    }
+
+    public int increment() {
+        int readValue = getValue();
+
+        /***
+         *      这里我们就是使用自己模拟的CAS算法实现的, 当我们的值不同的时候就循环直到正确为止
+         */
+
+        while (value.compareAndSwap(readValue, readValue + 1) != readValue) {
+            readValue = value.getValue();
+        }
+
+        return ++ readValue;
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        Counter2 c = new Counter2();
+
+        Thread[] t = new Thread[100000];
+        for (int i = 0; i < 100000; i++) {
+            t[i] = new Thread(() -> c.increment(), "Thread-" + (i + 1));
+        }
+
+        // ...
+    }
+}
+```
+
+这里实现的就是我们自己编写的CAS算法, 最终的结果集也是正确的。
+
 #### 参考
 [Java Compare and Swap Example – CAS Algorithm](https://howtodoinjava.com/java/multi-threading/compare-and-swap-cas-algorithm/)
 
