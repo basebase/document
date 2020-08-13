@@ -54,7 +54,7 @@ public void await() throws InterruptedException {
 **这里需要注意一点: 只要没调用await()方法的线程都不会被阻塞, 多个线程调用会同时被阻塞。**
 
 
-样例1: 现在我们要去提交OA审批(申请一台显示器), 期间可能会有很多人给我们审批, 等全部审批通过之后我们才可以去运维部门领取显示器, 只要期间有一个人审批不通过我们就会一直阻塞住无法继续执行。
+**样例1: 现在我们要去提交OA审批(申请一台显示器), 期间可能会有很多人给我们审批, 等全部审批通过之后我们才可以去运维部门领取显示器, 只要期间有一个人审批不通过我们就会一直阻塞住无法继续执行。**
 
 ```java
 
@@ -93,4 +93,103 @@ public class CountDownLatchExample01 {
 }
 ```
 
-该例子中, 当我们latch.countDown()执行次数不满足5次的话, 那么main线程就会陷入无限的等待中了。
+该例子中, 当中只要有一个线程没有执行latch.countDown()方法都会导致mian线程陷入无尽的阻塞中。
+
+
+**样例2: 现在有一群学生需要等老师来了发放试卷然后开始做题, 但是在发放试卷顺序可能会造成有些同学优先做题有些学生晚一点做题, 这样就会造成时间上的不公平, 我们要做的是只有当老师说现在开始做题之后大家才能一起动笔写题。**
+
+```java
+/***
+ *
+ *      描述:     CountDownLatch使用, 让多个子线程等待一个主线程
+ */
+
+public class CountDownLatchExample02 {
+
+    public static void main(String[] args) throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(5);
+
+        for (int i = 0; i < 5; i++) {
+            final int id = i + 1;
+            executorService.execute(() -> {
+                System.out.println("学生编号: " + id + " 领取到试卷, 等待做题...");
+                try {
+                    latch.await();
+                    System.out.println("学生编号: " + id + " 开始做题...");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+
+        Thread.sleep(3000);     // 等待一定时间, 老师正在拿着试卷走回教室
+        System.out.println("各位同学开始考试...");
+        latch.countDown();
+        executorService.shutdown();
+    }
+}
+```
+
+此例子中, 我们让所有学生领取到试卷之后才能开始写题。
+
+
+至此, 对比上面两个样例, 我们发现使用CountDownLatch可以有下面两种方式:
+  1. 一个线程等待多个线程执行完毕
+  2. 多个线程等待一个线程执行完毕
+
+样例1中就是一个线程等待多个线程执行完成后才能去做后续的事情, 而我们的样例2就不一样了, 它需要等待所有学生都拿到试卷后才能一起做题。
+
+对于无论是一个线程等待多个线程还是多个线程等待一个线程取决于我们的CountDownLatch的构造参数设置, 我们要做的是更具业务逻辑调用countDown()方法将其归零即可。至于在哪里或者什么时候调用countDown()方法取决于我们自己。
+
+对于CountDownLatch类, 我们当然还可以混用, 如下例子:
+
+**样例3: 每个学生写完并提交试卷的时间都是不一样的, 有些人很快有些人很慢, 老师需要等到最后一名同学提交试卷后才会走, 这个时候就需要老师等待学生了。**
+
+```java
+/***
+ *
+ *      描述:     CountDownLatch使用, 多个子线程等待主线程以及主线程等待多个子线程
+ */
+public class CountDownLatchExample03 {
+
+    public static void main(String[] args) throws InterruptedException {
+        CountDownLatch teach = new CountDownLatch(1);       // 老师的门闩
+        CountDownLatch student = new CountDownLatch(5);     // 学生的门闩
+
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(5);
+
+        for (int i = 0; i < 5; i++) {
+            final int id = i + 1;
+            executorService.execute(() -> {
+                System.out.println("学生编号: " + id + " 领取到试卷, 等待做题...");
+                try {
+                    teach.await();
+                    System.out.println("学生编号: " + id + " 开始做题...");
+                    int r = new Random().nextInt(10) + 1;
+                    Thread.sleep(r * 1000);
+                    System.out.println("学生编号: " + id + " 提交试卷");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    student.countDown();
+                }
+            });
+        }
+
+        Thread.sleep(3000);
+        teach.countDown();  //  开始考试
+
+        student.await();    // 等待学生都提交试卷
+        System.out.println("所有学生都提交了试卷....");
+        executorService.shutdown();
+    }
+}
+```
+
+此例中可以发现, 学生既要等老师说开始考试才能开始做题, 老师也需要等到最后一个学生提交试卷后才能离开。使用两个CountDownLatch进行配和。
+
+对于CountDownLatch也是有缺点的:
+  1. CountDownLatch是不可以复用的, 当我们调用过await()方法后, 如果还是同一实例的CountDownLatch则无效不会等待。
