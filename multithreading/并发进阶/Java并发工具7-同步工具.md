@@ -302,4 +302,67 @@ public class SemaPhoreExample01 {
 
 程序运行每次只有三个线程会去执行, 其它线程都会阻塞住。因为许可证的数量只有3个, 被优先提交的三个线程获取到了。
 
+注意点:
+ 1. 使用SemaPhore如果申请的许可证数量为5, 但是在释放的时候只释放了1个许可证, 即使释放了其余线程依旧无法执行, 因为许可证的数量不够, 还有4个许可证没有被释放掉。
 
+ 2. 一般使用公平的调度方式, 使用非公平可能导致任务长时间无法执行。
+
+ 3. 释放许可证并非一定要使用已经获取到许可证的线程, 任何线程都可以释放。
+
+ 
+ ```java
+/***
+ *      描述:     SemaPhore使用例子, 在非获取许可证的线程中统一释放许可证
+ */
+
+public class SemaPhoreExample02 {
+
+    static Semaphore semaphore = new Semaphore(2);
+
+    public static void main(String[] args) {
+
+        Thread[] threads = new Thread[5];
+        for (int i = 0; i < 5; i++) {
+            if (i == 2) {
+                threads[i] = new Thread(releaseTask(2), "Thread-" + i);
+            } else {
+                threads[i] = new Thread(acquireTask(), "Thread-" + i);
+            }
+        }
+
+        for (int i = 0; i < 5; i++) {
+            threads[i].start();
+        }
+    }
+
+    public static Runnable acquireTask() {
+        return () -> {
+            System.out.println(Thread.currentThread().getName() + " 尝试获取许可证...");
+            try {
+                semaphore.acquire(1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println(Thread.currentThread().getName() + " 获取到了许可证...");
+            // 此任务不释放许可证
+        };
+    }
+
+    public static Runnable releaseTask(int releaseNum) {
+        return () -> {
+            // 用来清除积压的许可证任务
+            int r = new Random().nextInt(3) + 1;
+            System.out.println(Thread.currentThread().getName() + " 正在清除积压任务, 耗时: " + r + "秒");
+            try {
+                Thread.sleep(r * 1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            semaphore.release(releaseNum);
+            System.out.println(Thread.currentThread().getName() + " 清空积压任务, 又有许可证可以使用了...");
+        };
+    }
+}
+ ```
+此例子中, 我们可以在非获取许可证线程中做一个统一的释放许可证的任务, 这样其余的线程又可以获取到许可证了。
