@@ -193,3 +193,72 @@ public class CountDownLatchExample03 {
 
 对于CountDownLatch也是有缺点的:
   1. CountDownLatch是不可以复用的, 当我们调用过await()方法后, 如果还是同一实例的CountDownLatch则无效不会等待。
+
+
+#### Semaphore使用
+
+Semaphore翻译为信号量, Semaphore可以控同时访问的线程个数。什么意思呢? 线程只有拥有Semaphore提供的"许可证"才可以执行, 否则就会进入阻塞状态。
+
+举个例子: 小明, 小黄, 小蓝, 小白, 小青五个人在同一家公司做程序猿, 但是年纪都比较大了要去结婚。由于公司资源紧张, 只有向公司提交申请才能准许请假去结婚(并且名额只有3名)。此时有两种提交方式:
+
+1. 大家谁先提交谁先获取到这个准许名额;
+2. 随机提交, 老板优先看到谁的就批谁的;
+
+这个例子中呢, 小明, 小黄, 小蓝, 小白, 小青他们就是我们的线程数量, 而3个名额就是信号量产生的许可证。只有获取到许可证的线程才可以执行, 其余没有获取到的线程就会进入阻塞状态。
+
+
+现在我们来看看Semaphore中的方法有哪些:
+
+```java
+public Semaphore(int permits, boolean fair) {
+    // ...
+}
+```
+
+构造方法中第一个参数是我们的许可证数量, 第二个是公平还是非公平。对于这里还是使用公平的策略。由于限制线程执行数量这个方法中肯定存在长时间的操作(比如上面例子中, 回家结婚就需要比较长时间), 如果使用了非公平插队执行本就需要长时间等待会更加没有执行的机会。
+
+
+```java
+public void acquire() throws InterruptedException {
+    // 获取一个许可
+}
+
+public void acquire(int permits) throws InterruptedException {
+    // 获取permits许可数量, 比如说一次获取3个
+}
+
+public void acquireUninterruptibly() {
+    // 这个方法不常用, 如果不想被中断使用此方法
+}
+
+public boolean tryAcquire() {
+    // 尝试获取一个许可，若获取成功，则立即返回true，若获取失败，则立即返回false
+}
+
+public boolean tryAcquire(int permits) {
+    // 尝试获取permits个许可，若获取成功，则立即返回true，若获取失败，则立即返回false
+}
+
+public boolean tryAcquire(long timeout, TimeUnit unit)
+    // 尝试获取一个许可，若在指定的时间内获取成功，则立即返回true，否则则立即返回false
+}
+
+public boolean tryAcquire(int permits, long timeout, TimeUnit unit)
+    throws InterruptedException {
+    // 尝试获取permits个许可，若在指定的时间内获取成功，则立即返回true，否则则立即返回false
+}
+```
+
+```java
+public void release() {
+    // 释放一个许可
+}
+
+public void release(int permits) {
+    // 释放permits个许可
+}
+```
+
+整体API方法下来是不是和我们学习Lock的API很像, 同样是获取锁, 尝试获取锁并且要释放锁。
+
+
