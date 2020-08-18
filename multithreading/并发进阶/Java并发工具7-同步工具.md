@@ -366,3 +366,144 @@ public class SemaPhoreExample02 {
 }
  ```
 该例子证明可以跨线程去释放我们的许可证, 只要我们在当前线程中没有去执行semaphore.acquire()方法就不会被阻塞, 但是线程可以使用semaphore.release()方法帮助其它线程释放许可证, 其它使用信号量的线程可以再次获取许可证。
+
+
+
+#### Condition使用
+使用Condition其实和我们的学习使用wait/notify是一样的, 它可以利用await/signal进行等待和唤醒, 而notifyAll对应的则是signalAll方法。
+
+Condition是一个接口, 要创建一个Condition我们需要通过Lock来返回一个Condition实例。为什么要绑定在一个Lock(锁)上面呢?
+其实, 大致猜想就能想到, 想要wait/notify是需要获取到锁的, 没有锁的话会抛出异常信息。而通过绑定Lock则可以知道Condition实例对应的是哪个锁, 知道唤醒哪把锁上的线程或者这把锁上有哪些阻塞的线程。
+
+所以, 我们要知道Condition的方法就是下面几个
+```java
+
+// 线程进入阻塞状态
+void await() throws InterruptedException;
+// 唤醒一个线程(唤醒等待时间最长的线程)
+void signal();
+// 唤醒所有线程
+void signalAll();
+```
+
+**样例1: 现在有两个线程, 第一个线程会做一些初始化任务, 而第二个线程会在初始化结束后再执行后续任务。通过Condition来实现。**
+
+```java
+/***
+ *      描述:     使用Condition配合线程阻塞和唤醒
+ */
+public class ConditionExample01 {
+    private Lock lock = new ReentrantLock();
+    private Condition condition = lock.newCondition();
+
+    public Runnable task1() {
+        return () -> {
+            lock.lock();
+            try {
+                System.out.println(Thread.currentThread().getName() + " 任务初始化中...");
+                int r = new Random().nextInt(3) + 1;
+                System.out.println(Thread.currentThread().getName() + " 任务初始化预估时间为: " + r + "秒");
+                Thread.sleep(r * 1000);
+                System.out.println(Thread.currentThread().getName() + " 初始化完成, 唤醒等待任务...");
+                condition.signal();     // 唤醒线程
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                lock.unlock();
+            }
+        };
+    }
+
+    public Runnable task2() {
+        return () -> {
+            lock.lock();
+            try {
+                System.out.println(Thread.currentThread().getName() + " 等待任务初始化完成...");
+                condition.await();      // 阻塞线程
+                System.out.println(Thread.currentThread().getName() + " 任务初始化完成, 执行后续任务...");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                lock.unlock();
+            }
+        };
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        ConditionExample01 conditionExample01 = new ConditionExample01();
+        new Thread(conditionExample01.task2(), "Thread-B").start();
+        Thread.sleep(10);       // 让线程Thread-B先执行进行等待, Thread-A优先执行则会出现线程无法被唤醒
+        new Thread(conditionExample01.task1(), "Thread-A").start();
+    }
+}
+```
+
+**样例2: 使用Condition实现生产消费者模式**
+
+```java
+/***
+ *      描述:     Condition生产者消费者模式
+ */
+public class ConditionExample02 {
+
+    private Lock lock = new ReentrantLock();
+    Condition p = lock.newCondition();
+
+    private int size = 10;
+    LinkedList<Integer> queue = new LinkedList<>();
+
+
+    public Runnable producer() {
+        return () -> {
+            for (int i = 0; i < 100; i++) {
+                lock.lock();
+                try {
+                    if (queue.size() == size) {
+                        System.out.println(Thread.currentThread().getName() + " 生产者队列已满, 进入等待...");
+                        p.await();
+                    }
+                    queue.add(i);
+                    System.out.println(Thread.currentThread().getName() + " 生产剩余容量为: " + (size - queue.size()));
+                    p.signal();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    lock.unlock();
+                }
+            }
+        };
+    }
+
+    public Runnable consumer() {
+        return () -> {
+            for (int i = 0; i < 100; i++) {
+                lock.lock();
+                try {
+                    if (queue.size() == 0) {
+                        System.out.println(Thread.currentThread().getName() + " 队列空啦, 进入阻塞");
+                        p.await();
+                    }
+
+                    Integer v = queue.poll();
+                    System.out.println(Thread.currentThread().getName() + " 消费数据为: " + v +
+                            " 队列大小为: " + queue.size());
+
+                    p.signal();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    lock.unlock();
+                }
+            }
+        };
+    }
+
+    public static void main(String[] args) {
+        ConditionExample02 conditionExample02 = new ConditionExample02();
+        new Thread(conditionExample02.producer(), "Producer").start();
+        new Thread(conditionExample02.consumer(), "Consumer").start();
+    }
+}
+```
+
+通过Condition实现一个生产消费模型, 不过有一个点还是要注意一下, **千万不要把lock.lock()写在了for循环外层, 这样会导致即使线程被唤醒也无法获取到锁, 这个不仅仅是在提示我自己, 也是在提示大家。**
