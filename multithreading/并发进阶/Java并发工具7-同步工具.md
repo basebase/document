@@ -579,3 +579,155 @@ public class ConditionExample03 {
     }
 }
 ```
+
+#### CyclicBarrier使用
+CyclicBarrier作用和CountDownLatch功能类似, 等待所有线程就位之后然后一起触发执行。而CyclicBarrier比CountDownLatch不同的一点就是可以循环使用, 当我们设定等待数量为5的时候, CountDownLatch之后就不可以使用了, 而我们CyclicBarrier还可以。
+
+对于CyclicBarrier只需要关注下面几个API即可。
+
+```java
+
+public CyclicBarrier(int parties) {
+    // 创建CyclicBarrier对象, 设置等待线程数量
+}
+
+public CyclicBarrier(int parties, Runnable barrierAction) {
+    // 这个构造方法就比较有意思, 提供了一个Runnable接口, 当所有线程都就位之后, 由最后一个进入的线程执行
+}
+
+public int await() throws InterruptedException, BrokenBarrierException {
+    // 线程等待
+}
+
+public int await(long timeout, TimeUnit unit)
+    throws InterruptedException,
+            BrokenBarrierException,
+            TimeoutException {
+    // 有时间的等待, 指定时间过后自行唤醒执行
+}
+```
+
+
+**样例1: 等待N个线程初始化完成统一工作**
+
+```java
+
+/**
+ *      描述:     CyclicBarrier例子使用
+ */
+public class CyclicBarrierExample01 {
+
+    public static void main(String[] args) {
+        CyclicBarrier cyclicBarrier = new CyclicBarrier(5);
+        for (int i = 0; i < 5; i++) {
+            new Thread(task(cyclicBarrier), "Thread-" + i).start();
+        }
+    }
+
+    public static Runnable task(CyclicBarrier cyclicBarrier) {
+        return () -> {
+            System.out.println(Thread.currentThread().getName() + " 开始初始化");
+            int r = new Random().nextInt(5) + 1;
+            System.out.println(Thread.currentThread().getName() + " 预估初始化时间为: " + r + "秒");
+            try {
+                Thread.sleep(r * 1000);
+                System.out.println(Thread.currentThread().getName() + " 初始化完成, 等待其它线程任务初始化完成");
+                cyclicBarrier.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (BrokenBarrierException e) {
+                e.printStackTrace();
+            }
+        };
+    }
+}
+```
+
+该例子会等待其它线程也都初始化完成后, 当CyclicBarrier中的count为0的时候即放行。但是, 我们想等待所有线程都到齐了之后在做一些处理, 那么就需要使用另外的构造方法了。
+
+**样例2: 当所有线程到齐后, 做一些处理工作**
+
+```java
+/**
+ *      描述:     CyclicBarrier例子使用
+ */
+public class CyclicBarrierExample02 {
+
+    public static void main(String[] args) {
+        CyclicBarrier cyclicBarrier = new CyclicBarrier(5, () -> {
+            System.out.println(Thread.currentThread().getName() + " 调用, 统一执行所有任务");
+        });
+        for (int i = 0; i < 5; i++) {
+            new Thread(task(cyclicBarrier), "Thread-" + i).start();
+        }
+    }
+    // ...
+}
+```
+
+此例子运行后, 当所有线程都到齐了之后, 由最后一个进入的线程去触发调用我们构造CyclicBarrier传入的Runnable接口方法。
+
+**样例3: 重复使用的CyclicBarrier**
+
+```java
+
+/**
+ *      描述:     CyclicBarrier例子使用
+ */
+public class CyclicBarrierExample03 {
+    public static void main(String[] args) {
+        for (int i = 0; i < 15; i++) {
+            new Thread(task(cyclicBarrier), "Thread-" + i).start();
+        }
+    }
+}
+```
+
+这里我们的循环调用改为15次, 前面等到5个任意线程到齐之后就会统一去执行, 然后第二批的5个线程并统一执行依次类推。
+但是, 如果不满足我们设定的阈值(假设5)就会一直阻塞。
+
+这里就要引入和CountDownLatch的一些不同点:
+  1. CountDownLatch通过countDown()方法来减少计数(我可以调用多次), CyclicBarrier则是通过线程它只有调用await()方法才会减少计数。
+
+  2. CyclicBarrier可以重复使用而CountDownLantern不可以。
+
+
+```java
+/**
+ *      描述:     CyclicBarrier例子, 使用单例的线程池数量不满足等待线程数量出现阻塞
+ */
+public class CyclicBarrierExample04 {
+
+    public static void main(String[] args) throws InterruptedException {
+        CyclicBarrier cyclicBarrier = new CyclicBarrier(2, () -> {
+            System.out.println(Thread.currentThread().getName() + " 调用, 统一执行所有任务");
+        });
+
+        CountDownLatch countDownLatch = new CountDownLatch(5);
+
+//        for (int i = 0; i < 2; i++) {
+//            new Thread(task1(cyclicBarrier), "Thread-" + i).start();
+//        }
+
+        ExecutorService executorService =
+                Executors.newSingleThreadExecutor();
+        for (int i = 0; i < 2; i++) {
+            executorService.execute(task1(cyclicBarrier));
+        }
+
+        executorService.shutdown();
+
+
+//        Thread.sleep(100);
+//        new Thread(task2(countDownLatch), "Thread-A").start();
+//
+//        Thread.sleep(20000);    // 等待时间越长, task2任务阻塞越长,
+//        for (int i = 0; i < 5; i++) {
+//            countDownLatch.countDown();     // countDown()方法可以在任何你觉得合适的地方去调用执行, 不依赖线程数量
+//            System.out.println("当前计数器的值为: " + countDownLatch.getCount());
+//        }
+    }
+}
+```
+
+如果我们使用一个单例的线程池, 而我们要等待的线程数有两个。此时线程池中的线程就会被阻塞住无法执行, 而我们使用CountDownLatch则可以直接调用多次来释放。这也得出CyclicBarrier是依赖线程数的。
