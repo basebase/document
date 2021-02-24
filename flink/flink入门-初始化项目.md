@@ -19,3 +19,9 @@ mvn archetype:generate                               \
 
 在运行命令后下载依赖jar包后要求我们手动输入一些信息, 这个根据自己所需填写即可;
 
+![maven命令初始化项目](https://github.com/basebase/document/blob/master/flink/image/%E5%88%9D%E5%A7%8B%E5%8C%96%E9%A1%B9%E7%9B%AE/maven%E5%91%BD%E4%BB%A4%E5%88%9D%E5%A7%8B%E5%8C%96%E9%A1%B9%E7%9B%AE.png?raw=true)
+
+当看到SUCCESS的时候, 就可以将创建的项目导入到IDEA进行程序编写了;
+
+#### 参考
+[Flink官网项目配置](https://ci.apache.org/projects/flink/flink-docs-release-1.12/dev/project-configuration.html#flink-core-and-application-dependencies)
