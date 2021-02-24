@@ -67,3 +67,5 @@ DataSet<Tuple2<String, Integer>> resultSet = source.flatMap(new WordCountFlatMap
 
 resultSet.print();      // 打印输出
 ```
+
+![输出结果](https://github.com/basebase/document/blob/master/flink/image/%E6%89%B9%E5%A4%84%E7%90%86%E4%BD%93%E9%AA%8C/%E8%BE%93%E5%87%BA%E7%BB%93%E6%9E%9C.png?raw=true)
