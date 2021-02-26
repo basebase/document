@@ -25,7 +25,7 @@ DataStream<String> sourceStream = env.readTextFile(inPath);
 这里需要注意的是, 当调用readTextFile()方法时返回的是DataStreamSource类型, 但是深入该类后发现其底层是DataStream类
 所以flink流处理API被称为DataStream API
 
-批处理使用DataSet API, 流处理使用DataStream API, 一般DataSet处理有限的数据集而DataStream一般处理无限的数据集
+批处理使用DataSet API, 批处理和流处理都可以使用DataStream API, 一般DataSet处理有限的数据集而DataStream一般处理无限的数据集
 这里有限的数据集指的是这个数据不会再增长了, 例如我们的文件固定就是N条, 而无限的数据集则不知道有多少条如我们的消息队列一直生产数据。
 
 
