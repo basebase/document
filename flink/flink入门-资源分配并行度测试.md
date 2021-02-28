@@ -10,7 +10,7 @@ sourceStream.flatMap(new WordCountBatch.WordCountFlatMapFunction())
                 .sum(1).setParallelism(2);
 ```
 
-2. 修改输出并行度为2
+2. 修改输出并行度为1
 ```java
 resultStream.print().setParallelism(1);
 ```
@@ -32,7 +32,7 @@ resultStream.print().setParallelism(1);
 ***Q: Flat Map执行任务数为什么是3?***  
 如果我们没有在代码中设置flatMap的并行度则使用我们提交任务时设置的并行度, 所以是3
 
-***Q: Keyed Aggregation任务数为什么是2***  
+***Q: Keyed Aggregation任务数为什么是2?***  
 根据key分组后的一个聚合操作, 也就是我们的keyby之后的sum操作, keyBy不是一个真正做计算的操作, 可以理解为一个shuffle过程
 这个shuffle的并行度是2, 这是我们通过代码设置的一个固定值
 
