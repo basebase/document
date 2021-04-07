@@ -23,16 +23,25 @@ TaskManager是运行在不同节点上的JVM进程(process), 该进程会拥有�
 flink中的计算资源通过slot来定义, 每个slot代表TaskManager的一个固定大小的资源子集, 例如: 一个拥有3个slot的TaskManager, 会将其管理的内存平均分成三等分给各个slot。
 将资源slot化意味着来自不同job的task不会为了内存而竞争, 因为每个slot都拥有一定数量的内存储备。需要注意的是, ***slot目前仅隔离内存, 并没有进行cpu隔离***
 
-每个TaskManager都有一个slot, 也就意味着每个task运行在独立的JVM中, 如果每个TaskManager有多个slot, 则多个task运行在同一个JVM中。而在同一个JVM进程中的task
+每个TaskManager都有一个slot(一个slot内执行一个task, 所以task之间是相互隔离的), 如果TaskManager只有一个slot, 则运行在该slot的task将独享JVM, 如果每个TaskManager有多个slot, 则多个task运行在同一个JVM中。而在同一个JVM进程中的task
 可以共享TCP连接和心跳信息, 可以减少数据的网络传输, 也能共享一些数据结构, 一定程度上减少了每个task消耗;
 
 
-对比发现, parallelism是可以细化到算子级别的, 可以动态设置每个算子并行度从而更加高效处理数据
+#### 资源使用例子
+
+![flink任务资源图](https://github.com/basebase/document/blob/master/flink/image/%E8%BF%90%E8%A1%8C%E6%9E%B6%E6%9E%84slot%E4%B8%8Eparallelism%E5%8C%BA%E5%88%AB/flink%E4%BB%BB%E5%8A%A1%E8%B5%84%E6%BA%90%E5%9B%BE.jpeg?raw=true)
+
+上图中, 我们有任务A,B,C,D,E并且拥有两个两个TaskManager每个TaskManager配置slot值为2, 但是运行时发现不同子任务运行在同一个slot中(后面介绍多个task如何共享一个slot资源), 那么该任务(Job)运行需要多少个slot?
+
+其实要判断一个任务(Job)需要多少slot非常容易, 我们只需要看 ***该任务(Job)设置算子最大并行度就是我们需要的slot***
+
+其中任务A、B、D并行度都为4, 任务C、E并行度都为2, 总共子任务为: 4 + 4 + 4 + 2 + 2 = 16  
+但是所需的slot则只要4个即可运行;
+
+#### slot与parallelism区别
+
+
 
 通过上面两点, 可以大概了解parallelism与slot的区别
 1. slot属于静态资源, 一旦设置具体值就保持不变, 想要更新则需要修改配置文件并且重启集群服务; parallelism属于动态资源, 可以通过程序动态为每个算子设置不同并行度值
-2. slot代表每个TaskManager最大的并发能力, parallelism代表实际需要的并发数量
-
-#### 资源使用例子
-
-
+2. slot代表每个TaskManager最大的并发能力, parallelism代表一个任务(Job)实际需要的并发数量
