@@ -40,8 +40,18 @@ flink中的计算资源通过slot来定义, 每个slot代表TaskManager的一个
 
 #### slot与parallelism区别
 
+下图中我们有三个TaskManager并且每个TaskManager都设置了3个slot所以总共有9个task slot可以使用, slot代表TaskManager并发执行能力
+![slot与parallelism区别-1](https://github.com/basebase/document/blob/master/flink/image/%E8%BF%90%E8%A1%8C%E6%9E%B6%E6%9E%84slot%E4%B8%8Eparallelism%E5%8C%BA%E5%88%AB/slot%E4%B8%8Eparallelism%E5%8C%BA%E5%88%AB-1.jpeg?raw=true)
 
+第一个例子, 我们程序使用flink配置文件中默认的并行度1, 则使用一个slot其余8个slot都是空闲的
+![slot与parallelism区别-2](https://github.com/basebase/document/blob/master/flink/image/%E8%BF%90%E8%A1%8C%E6%9E%B6%E6%9E%84slot%E4%B8%8Eparallelism%E5%8C%BA%E5%88%AB/slot%E4%B8%8Eparallelism%E5%8C%BA%E5%88%AB-2.jpeg?raw=true)
 
-通过上面两点, 可以大概了解parallelism与slot的区别
+第二个例子通过客户端提交或者通过env设置并行度2, 则使用2个slot剩余7个空闲slot, 第三个例子设置并行度为9则将所有slot都占用没有空闲资源
+![slot与parallelism区别-3](https://github.com/basebase/document/blob/master/flink/image/%E8%BF%90%E8%A1%8C%E6%9E%B6%E6%9E%84slot%E4%B8%8Eparallelism%E5%8C%BA%E5%88%AB/slot%E4%B8%8Eparallelism%E5%8C%BA%E5%88%AB-3.jpeg?raw=true)
+
+第四个例子中, 我们其余任务并行度都是9但是sink我们设置的并行度为1(如果不设置sink的并行度在写入文件由于是多个线程写入会出现数据乱序等问题, 所以这里设置1是合适的)
+![slot与parallelism区别-4](https://github.com/basebase/document/blob/master/flink/image/%E8%BF%90%E8%A1%8C%E6%9E%B6%E6%9E%84slot%E4%B8%8Eparallelism%E5%8C%BA%E5%88%AB/slot%E4%B8%8Eparallelism%E5%8C%BA%E5%88%AB-4.jpeg?raw=true)
+
+通过上面了解, 对于parallelism与slot的区别总结如下
 1. slot属于静态资源, 一旦设置具体值就保持不变, 想要更新则需要修改配置文件并且重启集群服务; parallelism属于动态资源, 可以通过程序动态为每个算子设置不同并行度值
-2. slot代表每个TaskManager最大的并发能力, parallelism代表一个任务(Job)实际需要的并发数量
+2. slot代表每个TaskManager最大的并发能力, parallelism代表一个任务(Job)实际需要的并发数量, 如果一个任务设置的并发值大于slot值则会出现资源不足的情况任务超时报错
