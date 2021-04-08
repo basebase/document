@@ -27,16 +27,16 @@ flink中的计算资源通过slot来定义, 每个slot代表TaskManager的一个
 可以共享TCP连接和心跳信息, 可以减少数据的网络传输, 也能共享一些数据结构, 一定程度上减少了每个task消耗;
 
 
-#### 资源使用例子
+#### 并行子任务资源使用例子
 
 ![flink任务资源图](https://github.com/basebase/document/blob/master/flink/image/%E8%BF%90%E8%A1%8C%E6%9E%B6%E6%9E%84slot%E4%B8%8Eparallelism%E5%8C%BA%E5%88%AB/flink%E4%BB%BB%E5%8A%A1%E8%B5%84%E6%BA%90%E5%9B%BE.jpeg?raw=true)
 
-上图中, 我们有任务A,B,C,D,E并且拥有两个两个TaskManager每个TaskManager配置slot值为2, 但是运行时发现不同子任务运行在同一个slot中(后面介绍多个task如何共享一个slot资源), 那么该任务(Job)运行需要多少个slot?
+上图中, 我们有任务A,B,C,D,E并且拥有两个两个TaskManager每个TaskManager配置slot值为2, 但是运行时发现不同子任务运行在同一个slot中, 每个子任务都是一个线程在slot中运行, slot中只会有一个线程子任务在运行, 不会同时运行多个子任务(后面介绍多个task如何共享一个slot资源), 那么该任务(Job)运行需要多少个slot?
 
 其实要判断一个任务(Job)需要多少slot非常容易, 我们只需要看 ***该任务(Job)设置算子最大并行度就是我们需要的slot***
 
-其中任务A、B、D并行度都为4, 任务C、E并行度都为2, 总共子任务为: 4 + 4 + 4 + 2 + 2 = 16  
-但是所需的slot则只要4个即可运行;
+该任务中算子A、B、D并行度都为4, 算子C、E并行度都为2, 则存在16(4 + 4 + 4 + 2 + 2 = 16)个子任务(sub-task), 这么多的子任务则使用4个slot就可以满足计算资源
+我们只需要找到任务最大算子并行度(当前为4)同时并行执行, 其余子任务会进行共享就可以满足整个任务资源使用;
 
 #### slot与parallelism区别
 
@@ -54,4 +54,4 @@ flink中的计算资源通过slot来定义, 每个slot代表TaskManager的一个
 
 通过上面了解, 对于parallelism与slot的区别总结如下
 1. slot属于静态资源, 一旦设置具体值就保持不变, 想要更新则需要修改配置文件并且重启集群服务; parallelism属于动态资源, 可以通过程序动态为每个算子设置不同并行度值
-2. slot代表每个TaskManager最大的并发能力, parallelism代表一个任务(Job)实际需要的并发数量, 如果一个任务设置的并发值大于slot值则会出现资源不足的情况任务超时报错
+2. slot代表每个TaskManager最大的并发能力(假设有3个TaskManager每个TaskManager设置的slot为3, 最大并发能力为9), parallelism代表一个任务(Job)实际需要的并发能力(假设我们为某个算子设置并发值为9则当前集群可以满足计算, 但是如果设置算子并发值为10则超出TaskManager的并发能力范围), 如果一个任务设置的并发值大于slot值则会出现资源不足的情况任务超时报错
