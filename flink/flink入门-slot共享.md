@@ -21,5 +21,21 @@ SlotSharingGroup是flink用来实现slot共享类, 它尽可能的让sub-task共
 
 答案是6个slot, 由于不是同一个共享组我们需要取出不同共享组最大算子并行度累加即: default中的4加上AAA中的2。
 
+上面的文字看起来太枯燥了, 我们透过下面两张图更加直观的去理解
 
+1. 整个任务(Job)的pipline在一个slot中执行, 我们用最开始的wordcount进行举例, 使用默认的并行度1, 在flink中执行会入下图:
 
+![一个slot包含整个pipline](https://github.com/basebase/document/blob/master/flink/image/slot%E5%85%B1%E4%BA%AB%E7%BB%84/%E4%B8%80%E4%B8%AAslot%E5%8C%85%E5%90%AB%E6%95%B4%E4%B8%AApipline.png?raw=true)
+
+所有的任务都在一个slot中执行, 大大的减少了数据传输等成本, 并且只占用了一个slot
+
+2. 为不同算子设置不同的slot共享组, 占用多个slot执行任务, 我们将wordcount例子中flatMap算子设置共享组"AAA", 这样flatMap及其下游算子slot共享组名称都为"AAA", 并且设置sink算子共享组为"ACC"
+
+```java
+DataStream<Tuple2<String, Integer>> resultStream = sourceStream.flatMap(new WordCountBatch.WordCountFlatMapFunction()).slotSharingGroup("ABC").setParallelism(2).keyBy(0).sum(1);
+resultStream.print().slotSharingGroup("ACC");
+```
+
+![不同slot组占用slot量](https://github.com/basebase/document/blob/master/flink/image/slot%E5%85%B1%E4%BA%AB%E7%BB%84/%E4%B8%8D%E5%90%8Cslot%E7%BB%84%E5%8D%A0%E7%94%A8slot%E9%87%8F.png?raw=true)
+
+取出每个共享组中最大算子并行度值累加, 我们需要4个slot才能运行任务
