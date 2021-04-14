@@ -1,7 +1,7 @@
 ### flink入门-slot共享
 
 #### 概述
-当提交运行一个任务, 我们会发现source和flatMap是在同一个slot中或者是keyBy/Window在同一个slot中去执行, 又或者其它算子占据一个slot, 这就是slot共享
+当提交运行一个任务, 我们会发现source和flatMap是在同一个slot中或者是keyBy/Window在同一个slot中去执行, 又或者其它几个算子占据一个slot, 这就是slot共享
 
 #### flink slot sharing(slot共享)
 默认情况下, flink允许sub-task共享slot, ***条件是它们来自同一个Job不同Task的sub-task***, 结果可能一个slot持有该job的整个pipline。
@@ -16,6 +16,8 @@ SlotSharingGroup是flink用来实现slot共享类, 它尽可能的让sub-task共
 如何判断一个算子(operator)属于哪个slot共享组, 默认情况下所有算子(operator)都属于 ***default***共享组, 也就是说默认情况下所有算子(operator)都可以共享一个slot。
 
 共享组是继承式的, 如果上一个共享组是default下一个算子则也是default, 如果上一个算子共享组是"AAA"则下一个算子共享组名称也是AAA。我们可以通过调用slotSharingGroup方法来设置算子的共享组名称
+
+通过调用slotSharingGroup方法强制指定算子(operator)共享组可以有效防止不合理的共享, 当一个slot中包含整个任务pipline, 所有sub-task都在一台机器上并使用一个slot内存, 线程切换的开销等问题都是不合理的并影响程序性能, 这个时候为其它算子设置不同共享组, 通过其它slot可以有效的平摊计算能力;
 
 这里有个问题需要注意: 当出现两个共享组[defautl, AAA], 如果共享组default算子最大并行度为4, 共享组AAA算子最大并行度为2则需要多少个slot? 
 
@@ -32,7 +34,7 @@ SlotSharingGroup是flink用来实现slot共享类, 它尽可能的让sub-task共
 2. 为不同算子设置不同的slot共享组, 占用多个slot执行任务, 我们将wordcount例子中flatMap算子设置共享组"AAA", 这样flatMap及其下游算子slot共享组名称都为"AAA", 并且设置sink算子共享组为"ACC"
 
 ```java
-DataStream<Tuple2<String, Integer>> resultStream = sourceStream.flatMap(new WordCountBatch.WordCountFlatMapFunction()).slotSharingGroup("ABC").setParallelism(2).keyBy(0).sum(1);
+DataStream<Tuple2<String, Integer>> resultStream = sourceStream.flatMap(new WordCountBatch.WordCountFlatMapFunction()).slotSharingGroup("AAA").setParallelism(2).keyBy(0).sum(1);
 resultStream.print().slotSharingGroup("ACC");
 ```
 
