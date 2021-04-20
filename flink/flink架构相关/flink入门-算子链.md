@@ -119,3 +119,30 @@ static boolean areOperatorsChainable(
 5. 节点shuffleModel不为BATCH
 6. 上下游节点并行度一致
 7. 没有禁用chain
+
+
+我们以最开始的wordcount的例子为模板, 当并发度为1时, 执行图如下:
+
+![初始提交任务结构](https://github.com/basebase/document/blob/master/flink/image/%E7%AE%97%E5%AD%90%E9%93%BE/%E5%88%9D%E5%A7%8B%E6%8F%90%E4%BA%A4%E4%BB%BB%E5%8A%A1%E7%BB%93%E6%9E%84.png?raw=true)
+
+我们可以修改flatMap并发数, 单独设置为2, 就会和source算子分解开并且和下游算子也无法链(chain)在一起, 并发度值不一样
+
+![算子并发度不同无法链接](https://github.com/basebase/document/blob/master/flink/image/%E7%AE%97%E5%AD%90%E9%93%BE/%E7%AE%97%E5%AD%90%E5%B9%B6%E5%8F%91%E5%BA%A6%E4%B8%8D%E5%90%8C%E6%97%A0%E6%B3%95%E9%93%BE%E6%8E%A5.png?raw=true)
+
+我们还可以通过在算子(operator)上调用startNewChain断开与上游算子的chain, 并开始一个新的算子链与下游算子chain, 只要满足chain条件
+
+通过在flatMap算子上调用startNewChain, 可以发现与前面的source算子断开chain, 并且我们在sum算子后面也调用startNewChain但不影响和后面的sink算子chain
+
+![调用startNewChain断开上游算子](https://github.com/basebase/document/blob/master/flink/image/%E7%AE%97%E5%AD%90%E9%93%BE/%E8%B0%83%E7%94%A8startNewChain%E6%96%AD%E5%BC%80%E4%B8%8A%E6%B8%B8%E7%AE%97%E5%AD%90.png?raw=true)
+
+但是, 我们将后面的sink并行度修改后就不会再chain在一起了
+![验证startNewChain不影响下游算子](https://github.com/basebase/document/blob/master/flink/image/%E7%AE%97%E5%AD%90%E9%93%BE/%E9%AA%8C%E8%AF%81startNewChain%E4%B8%8D%E5%BD%B1%E5%93%8D%E4%B8%8B%E6%B8%B8%E7%AE%97%E5%AD%90.png?raw=true)
+
+
+我们还可以调用算子的disableChaining不参与chain, 会与前后算子都断开不进行chain, 我么在sum算子上调用disableChaining可以发现其成为一个独立算子任务, 没有在与sink进行chain
+
+![算子调用disableChaining不参与chain](https://github.com/basebase/document/blob/master/flink/image/%E7%AE%97%E5%AD%90%E9%93%BE/%E7%AE%97%E5%AD%90%E8%B0%83%E7%94%A8disableChaining%E4%B8%8D%E5%8F%82%E4%B8%8Echain.png?raw=true)
+
+最后, 我们还可通过调用StreamExecutionEnvironment的disableOperatorChaining方法禁止算子chain
+
+![禁用算子链](https://github.com/basebase/document/blob/master/flink/image/%E7%AE%97%E5%AD%90%E9%93%BE/%E7%A6%81%E7%94%A8%E7%AE%97%E5%AD%90%E9%93%BE.png?raw=true)
