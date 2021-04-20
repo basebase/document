@@ -1,14 +1,16 @@
-### flink入门-运行架构概念介绍
+### flink入门-计算资源组件概念介绍
 
 #### 概念介绍
-通过前面的组件内容介绍大致了解flink有哪些进程在工作以及如何进行交互, 这是从一个宏观的层面去了解flink架构;
-但是, 当我们将一个任务提交flink集群后, 我们看到有一个具体执行图以及下面每个流程下产生的task任务数, 有些任务甚至进行了合并;
+在提交一个程序到flink集群后, 我们通常会看到一些执行图以及Task、slot等概念, 这一小节主要就是介绍相关术语, 为后面学习进行铺垫;
 
-下面两张图都是源自同一个程序, 占用的资源数量不一样, 执行任务数不一样, 逻辑执行图都不一样, 这是为什么呢?
+下图是我们最开始编写的wordcount程序, 但是我们会发现两个执行图是不一样的, 最直观的感受就是图1中的任务都进行了合并并且task数量很少, 后者任务没有合并且任务较多
+![运行架构概念-2.png](https://github.com/basebase/document/blob/master/flink/image/%E8%BF%90%E8%A1%8C%E6%9E%B6%E6%9E%84%E6%A6%82%E5%BF%B5%E4%BB%8B%E7%BB%8D/%E8%BF%90%E8%A1%8C%E6%9E%B6%E6%9E%84%E6%A6%82%E5%BF%B5-2.png?raw=true)
 
 ![运行架构概念-1.png](https://github.com/basebase/document/blob/master/flink/image/%E8%BF%90%E8%A1%8C%E6%9E%B6%E6%9E%84%E6%A6%82%E5%BF%B5%E4%BB%8B%E7%BB%8D/%E8%BF%90%E8%A1%8C%E6%9E%B6%E6%9E%84%E6%A6%82%E5%BF%B5-1.png?raw=true)
 
-![运行架构概念-2.png](https://github.com/basebase/document/blob/master/flink/image/%E8%BF%90%E8%A1%8C%E6%9E%B6%E6%9E%84%E6%A6%82%E5%BF%B5%E4%BB%8B%E7%BB%8D/%E8%BF%90%E8%A1%8C%E6%9E%B6%E6%9E%84%E6%A6%82%E5%BF%B5-2.png?raw=true)
+我们先带着下面问题进行后面的学习:
+1. 提交一个任务需要多少个slot?
+2. 任务如何进行合并的? 规则是什么呢?
 
 
 #### flink执行图介绍
@@ -35,7 +37,9 @@ StreamGraph -> JobGraph -> ExecutionGraph -> 物理执行图
     * 必须是不同Task的SubTask, 为了更好的资源均衡及利用
 
 
-当把上面这些知识点了解清楚之后, 回过头在上看上面的两张执行图就可以明白
-1. parallelism和Slot区别
-2. 处理一个任务需要多少个Slot
-3. 哪些任务会进行合并
+#### 参考
+[Flink 原理与实现：理解 Flink 中的计算资源](http://wuchong.me/blog/2016/05/09/flink-internals-understanding-execution-resources/)  
+[【源码】Flink 算子 chain 在一起的条件](https://www.cnblogs.com/Springmoon-venn/p/14110351.html)  
+[Flink中算子进行Chain的规则分析（最新代码，源码版本大于1.11.2）](https://www.cnblogs.com/mengyao/p/14045389.html)  
+[Operators](https://ci.apache.org/projects/flink/flink-docs-release-1.12/dev/stream/operators/)  
+[Flink 架构](https://ci.apache.org/projects/flink/flink-docs-release-1.12/zh/concepts/flink-architecture.html)

@@ -1,4 +1,4 @@
-### flink入门-运行架构slot与parallelism区别
+### flink入门-slot与parallelism区别
 
 #### 概述
 通常我们总会把parallelism与slot进行比较, 确实入门学习的时候不是很理解这两个参数具体作用, 我们最初看到parallelism和slot的概念是通过配置文件, 两个参数默认值都是设置为1;
