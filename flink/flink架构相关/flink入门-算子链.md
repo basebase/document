@@ -28,12 +28,12 @@ private static boolean isChainableInput(StreamEdge edge, StreamGraph streamGraph
     StreamNode upStreamVertex = streamGraph.getSourceVertex(edge);
     StreamNode downStreamVertex = streamGraph.getTargetVertex(edge);
 
-    if (!(upStreamVertex.isSameSlotSharingGroup(downStreamVertex)                   // 上下游节点在同一个slot group中
-        && areOperatorsChainable(upStreamVertex, downStreamVertex, streamGraph)     // 上下游算子策略能chain在一起
-        && (edge.getPartitioner() instanceof ForwardPartitioner)                    // 上下游节点分区策略是Forward
-        && edge.getShuffleMode() != ShuffleMode.BATCH                               // 节点shuffleModel不为BATCH
-        && upStreamVertex.getParallelism() == downStreamVertex.getParallelism()     // 上下游节点并行度一致
-        && streamGraph.isChainingEnabled())) {                                      // 没有禁用chain
+    if (!(upStreamVertex.isSameSlotSharingGroup(downStreamVertex)                   // 2. 上下游节点在同一个slot group中
+        && areOperatorsChainable(upStreamVertex, downStreamVertex, streamGraph)     // 3. 上下游算子策略能chain在一起
+        && (edge.getPartitioner() instanceof ForwardPartitioner)                    // 4. 上下游节点分区策略是Forward
+        && edge.getShuffleMode() != ShuffleMode.BATCH                               // 5. 节点shuffleModel不为BATCH
+        && upStreamVertex.getParallelism() == downStreamVertex.getParallelism()     // 6. 上下游节点并行度一致
+        && streamGraph.isChainingEnabled())) {                                      // 7. 没有禁用chain
 
         return false;
     }
@@ -48,5 +48,74 @@ private static boolean isChainableInput(StreamEdge edge, StreamGraph streamGraph
     }
     return true;
 }
+
+
+static boolean areOperatorsChainable(
+        StreamNode upStreamVertex,
+        StreamNode downStreamVertex,
+        StreamGraph streamGraph) {
+    StreamOperatorFactory<?> upStreamOperator = upStreamVertex.getOperatorFactory();
+    StreamOperatorFactory<?> downStreamOperator = downStreamVertex.getOperatorFactory();
+    if (downStreamOperator == null || upStreamOperator == null) {
+        return false;
+    }
+
+    // yielding operators cannot be chained to legacy sources
+    // unfortunately the information that vertices have been chained is not preserved at this point
+    if (downStreamOperator instanceof YieldingOperatorFactory &&
+            getHeadOperator(upStreamVertex, streamGraph).isLegacySource()) {
+        return false;
+    }
+
+    // we use switch/case here to make sure this is exhaustive if ever values are added to the
+    // ChainingStrategy enum
+    boolean isChainable;
+
+    // 获取上游节点chain类型
+    // 如果上游节点是NEVER则不可以chain, 如果是ALWAYS或者HEAD则上游满足条件
+    switch (upStreamOperator.getChainingStrategy()) {
+        case NEVER:
+            isChainable = false;
+            break;
+        case ALWAYS:
+        case HEAD:
+        case HEAD_WITH_SOURCES:
+            isChainable = true;
+            break;
+        default:
+            throw new RuntimeException("Unknown chaining strategy: " + upStreamOperator.getChainingStrategy());
+    }
+
+    // 获取下游节点chain类型
+    // 如果下游节点是NEVER或者HEAD则不会被chain到一起, 如果是ALWAYS则可以chain
+    switch (downStreamOperator.getChainingStrategy()) {
+        case NEVER:
+        case HEAD:
+            isChainable = false;
+            break;
+        case ALWAYS:
+            // keep the value from upstream
+            break;
+        case HEAD_WITH_SOURCES:
+            // only if upstream is a source
+            isChainable &= (upStreamOperator instanceof SourceOperatorFactory);
+            break;
+        default:
+            throw new RuntimeException("Unknown chaining strategy: " + upStreamOperator.getChainingStrategy());
+    }
+
+    return isChainable;
+}
 ```
 
+
+上面的代码约束的条件还挺多的, 总结下来就是:
+1. 下游节点只有一个输入边
+2. 上下游节点在同一个slot group中
+3. 上下游算子策略能chain在一起
+    * 3.1: 如果上游节点是NEVER则不可以chain, 如果是ALWAYS或者HEAD则上游满足条件
+    * 3.2: 如果下游节点是NEVER或者HEAD则不会被chain到一起, 如果是ALWAYS则可以chain, 对于HEAD_WITH_SOURCES类型则还需要判断上游节点是否为一个Source算子
+4. 上下游节点分区策略是Forward
+5. 节点shuffleModel不为BATCH
+6. 上下游节点并行度一致
+7. 没有禁用chain
