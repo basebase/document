@@ -8,7 +8,7 @@
 
 ![数据分区-类关系图](https://github.com/basebase/document/blob/master/flink/image/%E7%AE%97%E5%AD%90/partitions/%E6%95%B0%E6%8D%AE%E5%88%86%E5%8C%BA-%E7%B1%BB%E5%85%B3%E7%B3%BB%E5%9B%BE.png?raw=true)
 
-下面八个子类都继承实现自StreamPartitioner类, StreamPartitioner类实现ChannelSelector接口, 这里有非常有比较介绍ChannelSelector接口。
+下面八个子类都继承实现自StreamPartitioner类, StreamPartitioner类实现ChannelSelector接口, 这里有非常有必要介绍ChannelSelector接口。
 
 ```java
 public interface ChannelSelector<T extends IOReadableWritable> {
@@ -71,7 +71,7 @@ public class RebalancePartitioner<T> extends StreamPartitioner<T> {
 
 	@Override
 	public int selectChannel(SerializationDelegate<StreamRecord<T>> record) {
-        // 循环发送到下游task, 这里使用取模预算实现的循环
+        // 循环发送到下游task, 这里使用取模运算实现的循环
         // 假设: nextChannelToSendTo为1, numberOfChannels(下游算子并行数为3)
         // 第一次发送sub-task-id为: (1 + 1) % 3 = sub-task-2的任务
         // 第二次发送sub-task-id为: (2 + 1) % 3 = sub-task-0的任务
