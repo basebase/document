@@ -247,6 +247,137 @@ Exception in thread "main" java.lang.UnsupportedOperationException: Forward part
 
 ***提示2:*** 如果上下游算子没有指定分区器的情况下, 上下游算子并行度一致, 则使用forward分区, 否则使用rescale分区
 
-![forward分区算子分区逻辑图]()
+![forward分区算子分区逻辑图](https://github.com/basebase/document/blob/master/flink/image/%E7%AE%97%E5%AD%90/partitions/forward%E5%88%86%E5%8C%BA%E7%AE%97%E5%AD%90%E5%88%86%E5%8C%BA%E9%80%BB%E8%BE%91%E5%9B%BE.png?raw=true)
 
-![forward分区算子运行图]()
+![forward分区算子运行图](https://github.com/basebase/document/blob/master/flink/image/%E7%AE%97%E5%AD%90/partitions/forward%E5%88%86%E5%8C%BA%E7%AE%97%E5%AD%90%E8%BF%90%E8%A1%8C%E5%9B%BE.png?raw=true)
+
+#### 7. key分组策略
+通过DataStream.key()方法实现基于键值的数据交换策略, 根据键值对数据进行分区, 保证相同键值数据一定会交由同一个任务处理
+
+###### key分区源码
+```java
+public class KeyGroupStreamPartitioner<T, K> extends StreamPartitioner<T> implements ConfigurableStreamPartitioner {
+	private final KeySelector<T, K> keySelector;
+	private int maxParallelism;
+	public KeyGroupStreamPartitioner(KeySelector<T, K> keySelector, int maxParallelism) {
+		Preconditions.checkArgument(maxParallelism > 0, "Number of key-groups must be > 0!");
+		this.keySelector = Preconditions.checkNotNull(keySelector);
+		this.maxParallelism = maxParallelism;
+	}
+
+	@Override
+	public int selectChannel(SerializationDelegate<StreamRecord<T>> record) {
+		K key;
+		try {
+			key = keySelector.getKey(record.getInstance().getValue());
+		} catch (Exception e) {
+			throw new RuntimeException("Could not extract key from " + record.getInstance().getValue(), e);
+		}
+		return KeyGroupRangeAssignment.assignKeyToParallelOperator(key, maxParallelism, numberOfChannels);
+	}
+}
+
+
+public final class KeyGroupRangeAssignment {
+
+    // 根据key分配一个并行算子实例的索引，该索引即为该key要发送的下游算子实例的路由信息, 即该key发送到哪一个task
+	public static int assignKeyToParallelOperator(Object key, int maxParallelism, int parallelism) {
+		Preconditions.checkNotNull(key, "Assigned key must not be null!");
+		return computeOperatorIndexForKeyGroup(maxParallelism, parallelism, assignToKeyGroup(key, maxParallelism));
+	}
+
+    // 根据key分配一个分组id(keyGroupId)
+	public static int assignToKeyGroup(Object key, int maxParallelism) {
+		Preconditions.checkNotNull(key, "Assigned key must not be null!");
+		return computeKeyGroupForKeyHash(key.hashCode(), maxParallelism);
+	}
+
+    // 根据key分配一个分组id(keyGroupId),
+	public static int computeKeyGroupForKeyHash(int keyHash, int maxParallelism) {
+        // 与maxParallelism取余，获取keyGroupId
+		return MathUtils.murmurHash(keyHash) % maxParallelism;
+	}
+
+    // 计算分区index，即该key group应该发送到下游的哪一个算子实例
+	public static int computeOperatorIndexForKeyGroup(int maxParallelism, int parallelism, int keyGroupId) {
+		return keyGroupId * parallelism / maxParallelism;
+	}
+}
+```
+
+###### key分区例子
+```java
+socketSource.map(value -> value.replaceAll(",", "")).name("replaceMap").setParallelism(2)
+            .keyBy(value -> value)
+            .map(value -> value.toUpperCase()).name("upStrMap").setParallelism(4)
+            .keyBy(value -> value)
+            .map(value -> value.toLowerCase()).name("lowMap").setParallelism(2)
+            .map(value -> value.getBytes().length).name("strSize").setParallelism(1).print();
+```
+
+观察到replaceMap算子向upStrMap算子传输数据策略是使用hash(key分组)了, 上游有两个并行任务, 下游有2个并行任务, 上游相同key数据都发送到下游同一个任务中, 但是一个任务中并不会仅仅包含一种key数据
+
+![key分区算子分区逻辑图](https://github.com/basebase/document/blob/master/flink/image/%E7%AE%97%E5%AD%90/partitions/key%E5%88%86%E5%8C%BA%E7%AE%97%E5%AD%90%E5%88%86%E5%8C%BA%E9%80%BB%E8%BE%91%E5%9B%BE.png?raw=true)
+
+![key分区算子运行图](https://github.com/basebase/document/blob/master/flink/image/%E7%AE%97%E5%AD%90/partitions/key%E5%88%86%E5%8C%BA%E7%AE%97%E5%AD%90%E8%BF%90%E8%A1%8C%E5%9B%BE.png?raw=true)
+
+
+
+#### 8. 自定义分组策略
+通过DataStream.partitionCustom()方法实现自定义数据交换策略, 如果上面分区策略无法满足业务要求则我们可以自己实现想要的分区策略, 只需要传入一个Partitioner实现以及KeySelector实现即可, 底层是调用CustomPartitionerWrapper类
+
+###### 自定义分区例子
+```java
+public class DataFlowCustomPartitioners {
+
+    public static void main(String[] args) throws Exception {
+        socketSource.map(value -> {
+            String[] fields = value.split(",");
+            return new Student(Integer.parseInt(fields[0]), fields[1], Double.parseDouble(fields[2]));
+        }).name("studentMap").setParallelism(2)
+                .partitionCustom(new StudentPartitioner(), new StudentKeySelector())
+                .map(value -> value.toString().toUpperCase()).name("upStrMap").setParallelism(4).print();    
+        }
+
+    // 根据学生ID判断将数据发送到哪个子任务中
+    private static class StudentPartitioner implements Partitioner<Integer> {
+        @Override
+        public int partition(Integer key, int numPartitions) {
+            if (key < 0) {
+                return 0;
+            } else if (key > 0 && key < 10) {
+                return 1;
+            } else if (key > 10 && key < 20) {
+                return 2;
+            }
+            return 3;
+        }
+    }
+
+    // 以学生ID作为key
+    private static class StudentKeySelector implements KeySelector<Student, Integer> {
+        @Override
+        public Integer getKey(Student value) throws Exception {
+            return value.getId();
+        }
+    }
+}
+```
+
+#### 总结
+
+|  类型   | 描述  |
+|  ----  | ----  |
+| global  | 全部发送到第一个sub-task |
+| broadcast  | 发送有所sub-task |
+| forward  | 一对一发送 |
+| shuffle  | 随机均匀发送 |
+| rebalance  | 轮询发送 |
+| rescale  | 本地轮询发送 |
+| partitionCustom  | 自定义 |
+| key  | 相同key发送 |
+
+#### 参考
+[Flink的八种分区策略源码解读](https://jiamaoxiang.top/2020/03/30/Flink%E7%9A%84%E5%85%AB%E7%A7%8D%E5%88%86%E5%8C%BA%E7%AD%96%E7%95%A5%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB/#CustomPartitionerWrapper)
+
+[Flink 数据交换策略Partitioner](http://smartsi.club/physical-partitioning-in-apache-flink.html)
