@@ -1,7 +1,7 @@
 ### flink入门-代码实现
 
 #### 水位线设置
-前面, 我们已经把一些基础理论了解了, 下面就需要通过代码来进行实践, 如果设置我们的时间戳以及水位线生成。
+前面, 我们已经把一些基础理论了解了, 下面就需要通过代码来进行实践, 如何设置我们的时间戳以及水位线生成。
 
 水位线的生成DataStream可以通过三种模式完成:
 1. 在数据源完成, 利用SourceFunction在应用读入数据流的时候分配时间戳和生成水位线, 比如我们在读取kafka的数据源时就可以使用该种模式。
@@ -152,3 +152,10 @@ WatermarkStrategy<Order> orderWatermarkStrategy = WatermarkStrategy.<Order>forBo
     }
 });
 ```
+
+#### 参考
+[生成 Watermark](https://ci.apache.org/projects/flink/flink-docs-master/zh/docs/dev/datastream/event-time/generating_watermarks/#%E5%A4%84%E7%90%86%E7%A9%BA%E9%97%B2%E6%95%B0%E6%8D%AE%E6%BA%90)
+
+[flink教程-聊聊 flink 1.11 中新的水印策略](https://cloud.tencent.com/developer/article/1697930)
+
+[Flink新特性withIdleness一文全解析](https://blog.csdn.net/weixin_43704599/article/details/117426941)
