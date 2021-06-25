@@ -63,11 +63,11 @@ orderOperator.assignTimestampsAndWatermarks(orderWatermarkStrategy)
 ```text
 1,鞋子,1,2021-06-21 11:01:01
 ```
-假设, 我们传入的数据格式如下图展示
+假设, 我们传入的数据格式时间如下图展示
 
 ![flink水位线事件时间窗口测试-1](https://github.com/basebase/document/blob/master/flink/image/flink%E6%B0%B4%E4%BD%8D%E7%BA%BF/flink%E6%B0%B4%E4%BD%8D%E7%BA%BF%E4%BA%8B%E4%BB%B6%E6%97%B6%E9%97%B4%E7%AA%97%E5%8F%A3%E6%B5%8B%E8%AF%95-1.png?raw=true)
 
-图中标记了事件时间和对于的watermark时间, 当然真实的数据是一个时间戳而不是一个字符串, 这里只是为了更直观而已。如果能通过这张表理解何时出发计算窗口, 那么对于watermark的基本使用已经掌握了。
+图中标记了事件时间和对应的watermark时间, 当然watermark真实的数据是一个时间戳而不是一个字符串, 这里只是为了更直观而已。如果能通过这张表理解何时出发计算窗口, 那么对于watermark的基本使用已经掌握了。
 
 下面, 我们可以下执行程序结果
 ![flink水位线事件时间窗口测试-2](https://github.com/basebase/document/blob/master/flink/image/flink%E6%B0%B4%E4%BD%8D%E7%BA%BF/flink%E6%B0%B4%E4%BD%8D%E7%BA%BF%E4%BA%8B%E4%BB%B6%E6%97%B6%E9%97%B4%E7%AA%97%E5%8F%A3%E6%B5%8B%E8%AF%95-2.png?raw=true)
